@@ -10,10 +10,14 @@ const User = sequelize.define('User', {
     username: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true // important pour éviter les doublons
+        unique: true
+    },
+    avatar: {
+        type: DataTypes.STRING,
+        allowNull: true // <-- Nouveau champ pour stocker l'avatar Discord
     },
     role: {
-        type: DataTypes.ENUM('user', 'mods', 'admin'), // on peut rajouter d'autres rôles plus tard
+        type: DataTypes.ENUM('user', 'mods', 'admin'),
         allowNull: false,
         defaultValue: 'user'
     }

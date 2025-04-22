@@ -16,12 +16,13 @@ const generateRefreshToken = (userId, tokenId) => {
     return sign({ id: userId, jti: tokenId }, process.env.JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES });
 };
 
-// Ajouté pour Discord OAuth
 exports.discordCallback = async (req, res, next) => {
+    console.log('Envoyé comme redirect_uri:', process.env.DISCORD_REDIRECT_URI);
     const code = req.query.code;
     if (!code) return res.status(400).json({ message: 'Code not provided' });
 
     try {
+        // 1. Echanger code contre access token Discord
         const params = new URLSearchParams();
         params.append('client_id', process.env.DISCORD_CLIENT_ID);
         params.append('client_secret', process.env.DISCORD_CLIENT_SECRET);
@@ -35,21 +36,29 @@ exports.discordCallback = async (req, res, next) => {
 
         const accessToken = tokenResponse.data.access_token;
 
+        // 2. Récupérer les infos de l'utilisateur Discord
         const userResponse = await axios.get('https://discord.com/api/users/@me', {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
 
         const discordUser = userResponse.data;
 
+        // 3. Vérifier/Créer l'utilisateur local
         let user = await User.findOne({ where: { discordId: discordUser.id } });
         if (!user) {
             user = await User.create({
                 username: discordUser.username,
                 discordId: discordUser.id,
+                avatar: discordUser.avatar, // <-- très important
                 role: 'admin'
             });
+        } else {
+            // Optionnel: mettre à jour l'avatar si changé sur Discord
+            user.avatar = discordUser.avatar;
+            await user.save();
         }
 
+        // 4. Générer tes propres JWT
         const jwtAccessToken = generateAccessToken(user.id, user.role);
         const tokenId = uuidv4();
         const jwtRefreshToken = generateRefreshToken(user.id, tokenId);
@@ -59,10 +68,20 @@ exports.discordCallback = async (req, res, next) => {
 
         await RefreshToken.create({ token: tokenId, UserId: user.id, expiresAt });
 
-        res.json({ accessToken: jwtAccessToken, refreshToken: jwtRefreshToken });
+        // 5. Déposer un cookie HTTP Only avec le refreshToken
+        res.cookie('refreshToken', jwtRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // sécurise uniquement en prod (https)
+            sameSite: 'Strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours
+        });
+
+        // 6. Rediriger tranquillement vers ton site Front
+        res.redirect(process.env.FRONT_URL || 'http://localhost:5173/');
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Erreur Discord login' });
+        console.error('Discord OAuth Error:', err.response?.data || err.message);
+        res.status(400).json({ message: 'Discord OAuth error', details: err.response?.data || err.message });
     }
 };
 
@@ -119,5 +138,44 @@ exports.logoutAll = async (req, res, next) => {
         res.json({ message: 'Logged out from all devices' });
     } catch (err) {
         next(err);
+    }
+};
+
+exports.getMe = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) return res.status(401).json({ message: 'Not authenticated' });
+
+        const decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+        const storedToken = await RefreshToken.findOne({ where: { token: decoded.jti } });
+        if (!storedToken) {
+            return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+
+        if (new Date() > storedToken.expiresAt) {
+            await storedToken.destroy();
+            return res.status(401).json({ message: 'Refresh token expired' });
+        }
+
+        const user = await User.findByPk(decoded.id);
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+
+        // Regénérer un nouvel accessToken
+        const newAccessToken = generateAccessToken(user.id, user.role);
+
+        res.json({
+            accessToken: newAccessToken,
+            user: {
+                id: user.discordId,
+                avatar: user.avatar, // <-- ici aussi
+                username: user.username
+            }
+        });
+    } catch (err) {
+        console.error('Auth Me Error:', err);
+        res.status(401).json({ message: 'Invalid session' });
     }
 };

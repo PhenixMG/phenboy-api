@@ -6,5 +6,6 @@ router.post('/refresh-token', authController.refreshToken);
 router.post('/logout', authController.logout);
 router.post('/logout-all', authController.logoutAll);
 router.get('/discord/callback', authController.discordCallback);
+router.get('/me', authController.getMe); // ⬅️ Ici ta route /auth/me
 
 module.exports = router;

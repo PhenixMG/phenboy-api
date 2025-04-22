@@ -8,9 +8,12 @@ const errorHandler = require('./middlewares/errorHandler');
 const { authMiddleware, authorizeRoles } = require('./middlewares/authMiddleware');
 const initModels = require("./models/initModels");
 const cors = require('cors');
+const cookieParser = require("cookie-parser");
 
 require('dotenv').config();
 app.use(express.json());
+
+app.use(cookieParser());
 
 app.use(cors({
     origin: 'http://localhost:5173', // Front Vite
