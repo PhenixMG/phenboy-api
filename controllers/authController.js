@@ -22,7 +22,6 @@ exports.discordCallback = async (req, res, next) => {
     if (!code) return res.status(400).json({ message: 'Code not provided' });
 
     try {
-        // 1. Echanger code contre access token Discord
         const params = new URLSearchParams();
         params.append('client_id', process.env.DISCORD_CLIENT_ID);
         params.append('client_secret', process.env.DISCORD_CLIENT_SECRET);
