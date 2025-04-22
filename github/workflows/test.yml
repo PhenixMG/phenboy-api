@@ -1,10 +1,10 @@
 name: Run API Tests
 
 on:
-  pull_request:
-    branches: [ develop ] # A chaque PR vers develop
   push:
-    branches: [ develop ] # A chaque push direct sur develop
+    branches: [develop]
+  pull_request:
+    branches: [develop]
 
 jobs:
   test:
@@ -16,10 +16,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: '22'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Run tests
+      - name: Run tests & coverage
         run: npm test
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage
