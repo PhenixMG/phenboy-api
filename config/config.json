@@ -1,23 +1,23 @@
 {
   "development": {
-    "username": "root",
-    "password": "alexandre123Sa",
+    "username": "phenboy",
+    "password": "AG)_1nvP!GjN/xW0",
     "database": "phenboy_development",
-    "host": "127.0.0.1",
+    "host": "45.147.98.228",
     "dialect": "mysql"
   },
   "test": {
-    "username": "root",
-    "password": "alexandre123Sa",
+    "username": "phenboy",
+    "password": "AG)_1nvP!GjN/xW0",
     "database": "phenboy_test",
-    "host": "127.0.0.1",
+    "host": "45.147.98.228",
     "dialect": "mysql"
   },
   "production": {
-    "username": "root",
-    "password": "alexandre123Sa",
+    "username": "phenboy",
+    "password": "AG)_1nvP!GjN/xW0",
     "database": "phenboy_production",
-    "host": "127.0.0.1",
+    "host": "45.147.98.228",
     "dialect": "mysql"
   }
 }

@@ -12,11 +12,10 @@ const cookieParser = require("cookie-parser");
 
 require('dotenv').config();
 app.use(express.json());
-
 app.use(cookieParser());
 
 app.use(cors({
-    origin: 'http://localhost:5173', // Front Vite
+    origin: 'http://localhost:5173',
     credentials: true
 }));
 
@@ -28,25 +27,7 @@ app.use('/users', userRoutes);
 app.use('/posts', postRoutes);
 app.use('/auth', authRoutes);
 
-// Gestion 404
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'Route not found'
-    });
-});
-
-// Gestion erreurs globales
-app.use(errorHandler);
-
-// Lancer serveur
-sequelize.sync({ alter: true }).then(() => {
-    app.listen(process.env.PORT || 3000, () => {
-        console.log(`Server is running on port ${process.env.PORT || 3000}`);
-    });
-});
-
-// Exemple de route protégée
+// Routes protégées
 app.get('/private', authMiddleware, (req, res) => {
     res.json({ message: `Welcome user ${req.user.id}` });
 });
@@ -56,3 +37,17 @@ app.get('/profile', authMiddleware, (req, res) => {
 app.post('/admin-only', authMiddleware, authorizeRoles('admin'), (req, res) => {
     res.json({ message: 'Welcome admin!' });
 });
+
+// Gestion 404
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found'
+    });
+});
+
+// Gestion des erreurs
+app.use(errorHandler);
+
+// ➔ Très important : on **n'écoute pas ici** (PAS de app.listen())
+module.exports = { app, sequelize };

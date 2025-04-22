@@ -1,0 +1,25 @@
+name: Run API Tests
+
+on:
+  pull_request:
+    branches: [ develop ] # A chaque PR vers develop
+  push:
+    branches: [ develop ] # A chaque push direct sur develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test

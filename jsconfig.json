@@ -1,0 +1,11 @@
+{
+  "typeAcquisition": {
+    "enable": true
+  },
+  "include": ["tests/**/*.js"],
+  "globals": {
+    "describe": true,
+    "it": true,
+    "expect": true
+  }
+}
