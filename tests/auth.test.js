@@ -1,38 +1,50 @@
+require('dotenv').config();
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const { app, sequelize } = require('../app');
-const { RefreshToken } = require('../models'); // <-- on importe ton modèle
 
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev_secret_refresh';
+const { User } = sequelize.models;
+const { RefreshToken } = sequelize.models;
+
+process.env.JWT_REFRESH_SECRET = 'mon_secret_refresh_token';
 
 const fakeUser = {
     id: 123,
-    role: 'admin'
+    role: 'admin',
+    username: 'FakeUser',
+    discordId: '12345',
+    avatar: 'htt.jpg'
 };
 
 let refreshToken;
 let tokenId;
 
 beforeAll(async () => {
-    await sequelize.sync({ force: true }); // reset base in memory
+    await sequelize.sync({ force: true }); // reset db
 
-    tokenId = 'fake-token-id-123'; // Id du token
+    // Créer d'abord un User en BDD
+    await User.create({
+        id: fakeUser.id, // IMPORTANT: même ID que dans ton token
+        username: fakeUser.username,
+        role: fakeUser.role
+    });
+
+    tokenId = 'fake-token-id-123';
+
     refreshToken = jwt.sign(
         { id: fakeUser.id, jti: tokenId },
-        REFRESH_SECRET,
+        process.env.JWT_REFRESH_SECRET,
         { expiresIn: '7d' }
     );
 
-    // 👉 INSERER LE FAKE REFRESH TOKEN DANS SQLITE
     await RefreshToken.create({
         token: tokenId,
         UserId: fakeUser.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // +7 jours
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     });
 });
 
 describe('Tests de l\'API Auth', () => {
-
     it('devrait retourner 401 si aucun cookie fourni', async () => {
         const res = await request(app)
             .get('/auth/me')
@@ -61,5 +73,4 @@ describe('Tests de l\'API Auth', () => {
         expect(res.body.user).toHaveProperty('id');
         expect(res.body.user).toHaveProperty('username');
     });
-
 });

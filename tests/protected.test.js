@@ -2,13 +2,22 @@ const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const { app, sequelize } = require('../app');
 
-// Simuler un secret JWT comme dans ton .env
-const ACCESS_SECRET = process.env.JWT_SECRET || 'dev_secret_access';
+const { User } = sequelize.models;
+const { Post } = sequelize.models;
+
+// charge ton .env (optionnel si déjà fait dans app.js)
+require('dotenv').config();
+
+// OVERRIDE pour les tests : le même secret que dans ton .env côté API
+process.env.JWT_SECRET = 'mon_secret_access_token';
 
 // Simuler un user pour le token
 const fakeUser = {
-    id: 456, // ID d'utilisateur fictif
-    role: 'admin'
+    id: 123,
+    role: 'admin',
+    username: 'FakeUser',
+    discordId: '12345',
+    avatar: 'htt.jpg'
 };
 
 let accessToken;
@@ -20,7 +29,7 @@ beforeAll(async () => {
     // Générer un AccessToken valide pour les tests
     accessToken = jwt.sign(
         { id: fakeUser.id, role: fakeUser.role },
-        ACCESS_SECRET,
+        process.env.JWT_SECRET,
         { expiresIn: '15m' }
     );
 });
