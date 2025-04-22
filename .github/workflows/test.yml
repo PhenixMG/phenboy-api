@@ -52,7 +52,6 @@ jobs:
           path: coverage
           retention-days: 1
 
-      # Optional: publier la couverture sur Codecov
       - name: Upload to Codecov
         if: success()
         uses: codecov/codecov-action@v3
