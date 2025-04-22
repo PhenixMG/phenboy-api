@@ -1,49 +1,68 @@
 const {verify, sign} = require("jsonwebtoken");
 const {compare, hash} = require("bcrypt");
-const ACCESS_TOKEN_EXPIRES = '15m';
-const REFRESH_TOKEN_EXPIRES = '7d'; // 7 jours
-const { v4: uuidv4 } = require('uuid'); // Import uuid
+const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
+const User = require('../models/User');
+const RefreshToken  = require('../models/RefreshToken');
 
+const ACCESS_TOKEN_EXPIRES = '15m';
+const REFRESH_TOKEN_EXPIRES = '7d';
 
 const generateAccessToken = (userId, role) => {
     return sign({ id: userId, role }, process.env.JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES });
 };
 
 const generateRefreshToken = (userId, tokenId) => {
-    return sign(
-        { id: userId, jti: tokenId },
-        process.env.JWT_REFRESH_SECRET,
-        { expiresIn: REFRESH_TOKEN_EXPIRES }
-    );
+    return sign({ id: userId, jti: tokenId }, process.env.JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES });
 };
 
+// Ajouté pour Discord OAuth
+exports.discordCallback = async (req, res, next) => {
+    const code = req.query.code;
+    if (!code) return res.status(400).json({ message: 'Code not provided' });
 
-exports.login = async (req, res, next) => {
     try {
-        const { username, password } = req.body;
-        const user = await User.findOne({ where: { username } });
-        if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+        const params = new URLSearchParams();
+        params.append('client_id', process.env.DISCORD_CLIENT_ID);
+        params.append('client_secret', process.env.DISCORD_CLIENT_SECRET);
+        params.append('grant_type', 'authorization_code');
+        params.append('code', code);
+        params.append('redirect_uri', process.env.DISCORD_REDIRECT_URI);
 
-        const isPasswordValid = await compare(password, user.password);
-        if (!isPasswordValid) return res.status(401).json({ message: 'Invalid credentials' });
+        const tokenResponse = await axios.post('https://discord.com/api/oauth2/token', params, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
 
-        const accessToken = generateAccessToken(user.id, user.role);
+        const accessToken = tokenResponse.data.access_token;
 
-        const tokenId = uuidv4(); // Créer un ID unique pour le token
-        const refreshToken = generateRefreshToken(user.id, tokenId);
+        const userResponse = await axios.get('https://discord.com/api/users/@me', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        const discordUser = userResponse.data;
+
+        let user = await User.findOne({ where: { discordId: discordUser.id } });
+        if (!user) {
+            user = await User.create({
+                username: discordUser.username,
+                discordId: discordUser.id,
+                role: 'admin'
+            });
+        }
+
+        const jwtAccessToken = generateAccessToken(user.id, user.role);
+        const tokenId = uuidv4();
+        const jwtRefreshToken = generateRefreshToken(user.id, tokenId);
 
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
-        await RefreshToken.create({
-            token: tokenId,
-            UserId: user.id,
-            expiresAt
-        });
+        await RefreshToken.create({ token: tokenId, UserId: user.id, expiresAt });
 
-        res.json({ accessToken, refreshToken });
+        res.json({ accessToken: jwtAccessToken, refreshToken: jwtRefreshToken });
     } catch (err) {
-        next(err);
+        console.error(err);
+        res.status(500).json({ message: 'Erreur Discord login' });
     }
 };
 
@@ -98,43 +117,6 @@ exports.logoutAll = async (req, res, next) => {
         await RefreshToken.destroy({ where: { UserId: userId } });
 
         res.json({ message: 'Logged out from all devices' });
-    } catch (err) {
-        next(err);
-    }
-};
-
-exports.register = async (req, res, next) => {
-    try {
-        const { username, password } = req.body;
-
-        const existingUser = await User.findOne({ where: { username } });
-        if (existingUser) {
-            return res.status(400).json({ message: 'Username already exists' });
-        }
-
-        const hashedPassword = await hash(password, 10);
-        const user = await User.create({ username, password: hashedPassword });
-
-        // Générer les tokens dès l'inscription
-        const accessToken = generateAccessToken(user.id, user.role);
-
-        const tokenId = uuidv4(); // générer un jti
-        const refreshToken = generateRefreshToken(user.id, tokenId);
-
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7);
-
-        await RefreshToken.create({
-            token: tokenId,
-            UserId: user.id,
-            expiresAt
-        });
-
-        res.status(201).json({
-            message: 'User created successfully',
-            accessToken,
-            refreshToken
-        });
     } catch (err) {
         next(err);
     }

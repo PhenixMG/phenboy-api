@@ -7,9 +7,15 @@ const authRoutes = require('./routes/authRoutes');
 const errorHandler = require('./middlewares/errorHandler');
 const { authMiddleware, authorizeRoles } = require('./middlewares/authMiddleware');
 const initModels = require("./models/initModels");
+const cors = require('cors');
 
 require('dotenv').config();
 app.use(express.json());
+
+app.use(cors({
+    origin: 'http://localhost:5173', // Front Vite
+    credentials: true
+}));
 
 // Initialiser les modèles
 initModels();

@@ -2,14 +2,15 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../db/database');
 
 const User = sequelize.define('User', {
+    discordId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true
+    },
     username: {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true // important pour éviter les doublons
-    },
-    password: {
-        type: DataTypes.STRING,
-        allowNull: false
     },
     role: {
         type: DataTypes.ENUM('user', 'mods', 'admin'), // on peut rajouter d'autres rôles plus tard
