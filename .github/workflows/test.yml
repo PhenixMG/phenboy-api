@@ -2,30 +2,59 @@ name: Run API Tests
 
 on:
   push:
-    branches: [develop]
+    branches:
+      - develop
   pull_request:
-    branches: [develop]
+    branches:
+      - develop
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [18, 20]  # Versions LTS
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node-version }}
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests & coverage
-        run: npm test
+      - name: Run tests & generate coverage
+        run: npm run test
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
         with:
           name: coverage-report
           path: coverage
+          retention-days: 1
+
+      # Optional: publier la couverture sur Codecov
+      - name: Upload to Codecov
+        if: success()
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/lcov.info
