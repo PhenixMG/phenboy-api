@@ -49,5 +49,4 @@ app.use((req, res) => {
 // Gestion des erreurs
 app.use(errorHandler);
 
-// ➔ Très important : on **n'écoute pas ici** (PAS de app.listen())
 module.exports = { app, sequelize };
