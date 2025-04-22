@@ -1,22 +1,18 @@
 const express = require('express');
 const app = express();
-const sequelize = require('./db');
+const { sequelize } = require('./db/database');
 const userRoutes = require('./routes/userRoutes');
 const postRoutes = require('./routes/postRoutes');
 const authRoutes = require('./routes/authRoutes');
-const errorHandler = require('./middlewares/errorHandler'); // <-- ici
-const authMiddleware = require('./middlewares/authMiddleware');
+const errorHandler = require('./middlewares/errorHandler');
+const { authMiddleware, authorizeRoles } = require('./middlewares/authMiddleware');
+const initModels = require("./models/initModels");
 
 require('dotenv').config();
-
 app.use(express.json());
 
-// Relations
-const User = require('./models/User');
-const Post = require('./models/Post');
-const {authorizeRoles} = require("./middlewares/authMiddleware");
-User.hasMany(Post);
-Post.belongsTo(User);
+// Initialiser les modèles
+initModels();
 
 // Routes
 app.use('/users', userRoutes);
@@ -35,13 +31,11 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // Lancer serveur
-sequelize.sync().then(() => {
+sequelize.sync({ alter: true }).then(() => {
     app.listen(process.env.PORT || 3000, () => {
         console.log(`Server is running on port ${process.env.PORT || 3000}`);
     });
 });
-
-const router = express.Router();
 
 // Exemple de route protégée
 app.get('/private', authMiddleware, (req, res) => {

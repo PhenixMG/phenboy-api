@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../db');
-const Category = require('./Category');
+const { sequelize } = require('../db/database');
 
 const Thread = sequelize.define('Thread', {
     title: {
@@ -10,9 +9,5 @@ const Thread = sequelize.define('Thread', {
 }, {
     timestamps: true
 });
-
-// Relations
-Category.hasMany(Thread, { foreignKey: 'categoryId', onDelete: 'CASCADE' });
-Thread.belongsTo(Category, { foreignKey: 'categoryId' });
 
 module.exports = Thread;

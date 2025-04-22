@@ -1,7 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../db');
-const Thread = require('./Thread');
-const User = require('./User');
+const { sequelize } = require('../db/database');
 
 const Post = sequelize.define('Post', {
     title: {
@@ -15,12 +13,5 @@ const Post = sequelize.define('Post', {
 }, {
     timestamps: true
 });
-
-// Relations
-Thread.hasMany(Post, { foreignKey: 'threadId', onDelete: 'CASCADE' });
-Post.belongsTo(Thread, { foreignKey: 'threadId' });
-
-User.hasMany(Post, { foreignKey: 'userId', onDelete: 'CASCADE' });
-Post.belongsTo(User, { foreignKey: 'userId' });
 
 module.exports = Post;
