@@ -46,7 +46,6 @@ app.use((req, res) => {
     });
 });
 
-// Gestion des erreurs
 app.use(errorHandler);
 
 module.exports = { app, sequelize };
