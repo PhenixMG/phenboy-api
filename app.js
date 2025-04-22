@@ -38,7 +38,6 @@ app.post('/admin-only', authMiddleware, authorizeRoles('admin'), (req, res) => {
     res.json({ message: 'Welcome admin!' });
 });
 
-// Gestion 404
 app.use((req, res) => {
     res.status(404).json({
         success: false,
