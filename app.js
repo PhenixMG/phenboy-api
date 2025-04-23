@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const { sequelize } = require('./db/database');
-const setupSwagger = require('./docs/swagger');
+const setupSwagger = require('./swaggerConfig');
 
 // 📦 Routes
 const userRoutes = require('./routes/userRoutes');
@@ -66,7 +66,8 @@ app.post('/admin-only', authMiddleware, authorizeRoles('admin'), (req, res) => {
     res.json({ message: 'Welcome admin!' });
 });
 
-setupSwagger(app); // ➕ Ajoute la route /docs
+// Swagger docs (important, à mettre AVANT tes routes 404 !)
+setupSwagger(app);
 
 // ❌ Route inconnue
 app.use((req, res) => {
