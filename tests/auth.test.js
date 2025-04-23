@@ -1,12 +1,14 @@
+process.env.JWT_REFRESH_SECRET = 'mon_secret_refresh_token';
+process.env.JWT_SECRET         = 'mon_secret_access_token';
+process.env.COOKIE_SECRET      = 'ma_clef_cookie_pour_tests';
+process.env.NODE_ENV           = 'test';
+
 require('dotenv').config();
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const { app, sequelize } = require('../app');
-
 const { User } = sequelize.models;
 const { RefreshToken } = sequelize.models;
-
-process.env.JWT_REFRESH_SECRET = 'mon_secret_refresh_token';
 
 const fakeUser = {
     id: 123,
