@@ -1,17 +1,14 @@
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const { app, sequelize } = require('../app');
+const { User, Post } = sequelize.models;
 
-const { User } = sequelize.models;
-const { Post } = sequelize.models;
+require('dotenv').config(); // chargement de .env si besoin
 
-// charge ton .env (optionnel si déjà fait dans app.js)
-require('dotenv').config();
-
-// OVERRIDE pour les tests : le même secret que dans ton .env côté API
+// 🔐 Override du secret pour cohérence avec le test
 process.env.JWT_SECRET = 'mon_secret_access_token';
 
-// Simuler un user pour le token
+// Utilisateur simulé
 const fakeUser = {
     id: 123,
     role: 'admin',
@@ -23,10 +20,12 @@ const fakeUser = {
 let accessToken;
 
 beforeAll(async () => {
-    // Synchroniser la base de données en mémoire (SQLite)
     await sequelize.sync({ force: true });
 
-    // Générer un AccessToken valide pour les tests
+    // Création manuelle de l'utilisateur (facultatif si pas vérifié côté middleware)
+    await User.create(fakeUser);
+
+    // Token signé (valide 15min)
     accessToken = jwt.sign(
         { id: fakeUser.id, role: fakeUser.role },
         process.env.JWT_SECRET,
@@ -34,15 +33,21 @@ beforeAll(async () => {
     );
 });
 
-describe('Tests des routes protégées', () => {
+describe('🔐 Tests des routes protégées avec JWT', () => {
 
-    it('devrait refuser l\'accès à /private sans token', async () => {
-        const res = await request(app)
+    /**
+     * @test Vérifie que /private sans token renvoie une erreur
+     */
+    it('❌ /private : refuse sans token', async () => {
+        await request(app)
             .get('/private')
-            .expect(401); // Ton middleware doit envoyer un 401 Unauthorized
+            .expect(401);
     });
 
-    it('devrait accéder à /private avec un token valide', async () => {
+    /**
+     * @test Vérifie que /private avec token retourne un message
+     */
+    it('✅ /private : accepte avec token', async () => {
         const res = await request(app)
             .get('/private')
             .set('Authorization', `Bearer ${accessToken}`)
@@ -51,13 +56,19 @@ describe('Tests des routes protégées', () => {
         expect(res.body.message).toContain('Welcome user');
     });
 
-    it('devrait refuser /admin-only sans token', async () => {
-        const res = await request(app)
+    /**
+     * @test Vérifie que /admin-only sans token est rejeté
+     */
+    it('❌ /admin-only : refuse sans token', async () => {
+        await request(app)
             .post('/admin-only')
             .expect(401);
     });
 
-    it('devrait accéder à /admin-only avec un token admin', async () => {
+    /**
+     * @test Vérifie que /admin-only est OK avec un token admin
+     */
+    it('✅ /admin-only : accepte avec rôle admin', async () => {
         const res = await request(app)
             .post('/admin-only')
             .set('Authorization', `Bearer ${accessToken}`)

@@ -1,6 +1,13 @@
 const { sequelize } = require('../db/database');
 const initModels = require('../models/initModels');
 
+/**
+ * 🧨 Supprime et recrée toutes les tables de la base de données.
+ * Utilise `sequelize.sync({ force: true })`, donc attention en production.
+ * Idéal pour du développement local ou des tests.
+ *
+ * Peut être lancé avec : `node scripts/resetDatabase.js`
+ */
 async function resetDatabase() {
     try {
         console.log('🔄 Initialisation des modèles...');

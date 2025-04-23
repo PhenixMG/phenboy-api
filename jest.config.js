@@ -1,13 +1,13 @@
 module.exports = {
-    testEnvironment: 'node',
-    verbose: true,
-    colors: true,
-    runInBand: true,
-    detectOpenHandles: true,
-    collectCoverage: true,
-    coverageDirectory: 'coverage',
-    coverageReporters: ['text', 'lcov', 'html'],
-    coverageThreshold: {
+    testEnvironment: 'node',                  // Simulation d'environnement Node (pas navigateur)
+    verbose: true,                            // Affiche les détails des tests dans la console
+    colors: true,                             // Active la couleur dans les logs Jest
+    runInBand: true,                          // Exécute les tests en série (utile pour DB partagée)
+    detectOpenHandles: true,                  // Aide à détecter les promesses non résolues
+    collectCoverage: true,                    // Active la couverture de code
+    coverageDirectory: 'coverage',            // Où stocker les résultats
+    coverageReporters: ['text', 'lcov', 'html'], // Formats des rapports
+    coverageThreshold: {                      // Fait échouer si en-dessous des seuils
         global: {
             branches: 80,
             functions: 80,
@@ -15,7 +15,6 @@ module.exports = {
             statements: 80
         }
     },
-    // Si tu utilises un reporter HTML :
     reporters: [
         'default',
         ['jest-html-reporter', {
