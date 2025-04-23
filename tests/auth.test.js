@@ -26,7 +26,7 @@ beforeAll(async () => {
 
     // Créer d'abord un User en BDD
     await User.create({
-        id: fakeUser.id, // IMPORTANT: même ID que dans ton token
+        id: fakeUser.id,
         username: fakeUser.username,
         role: fakeUser.role
     });
