@@ -1,6 +1,13 @@
 const jwt = require('jsonwebtoken');
 
-// Vérifie que l'utilisateur est authentifié
+/**
+ * Middleware d'authentification.
+ * Vérifie qu’un token JWT est présent et valide.
+ * Injecte `req.user = { id, role }` si succès.
+ *
+ * @middleware
+ * @returns {401} Unauthorized si token absent ou invalide
+ */
 const authMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -18,7 +25,16 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
-// Vérifie que l'utilisateur a un rôle autorisé
+/**
+ * Middleware d'autorisation basé sur le rôle de l'utilisateur.
+ * À utiliser après `authMiddleware`.
+ *
+ * @param  {...string} roles - Rôles autorisés (ex: "admin", "mods")
+ * @returns Middleware Express
+ *
+ * @example
+ * router.post('/admin-only', authMiddleware, authorizeRoles('admin'), handler)
+ */
 const authorizeRoles = (...roles) => {
     return (req, res, next) => {
         if (!roles.includes(req.user.role)) {

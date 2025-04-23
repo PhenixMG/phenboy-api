@@ -1,25 +1,80 @@
+// Modèles importés
 const User = require('./User');
 const Post = require('./Post');
 const Thread = require('./Thread');
 const Category = require('./Category');
 const RefreshToken = require('./RefreshToken');
+const ChannelConfig = require('./ChannelConfig');
+const Server = require('./Server');
+const ModerationLog = require('./ModerationLog');
+const UserLevel = require('./UserLevel');
+const MemberSnapshot = require('./MemberSnapshot');
+const DivisionConfig = require('./DivisionConfig');
+const Td2Blacklist = require('./Td2Blacklist');
+const Td2Activity = require('./Td2Activity');
 
+/**
+ * 🔗 Initialise toutes les relations entre les modèles Sequelize.
+ * À appeler une seule fois avant la synchronisation ou utilisation.
+ *
+ * @function initModels
+ * @example
+ * const initModels = require('./models/initModels');
+ * initModels();
+ */
 function initModels() {
-    // Post <-> Thread
+    /** Forum Relations **/
+
+    // Un Thread contient plusieurs Posts
     Thread.hasMany(Post, { foreignKey: 'threadId', onDelete: 'CASCADE' });
     Post.belongsTo(Thread, { foreignKey: 'threadId' });
 
-    // Post <-> User
+    // Un Post appartient à un User
     User.hasMany(Post, { foreignKey: 'userId', onDelete: 'CASCADE' });
     Post.belongsTo(User, { foreignKey: 'userId' });
 
-    // Thread <-> Category
+    // Une Catégorie contient plusieurs Threads
     Category.hasMany(Thread, { foreignKey: 'categoryId', onDelete: 'CASCADE' });
     Thread.belongsTo(Category, { foreignKey: 'categoryId' });
 
-    // RefreshToken <-> User
+    /** Auth & Sécurité **/
+
+    // Un User peut avoir plusieurs RefreshTokens
     User.hasMany(RefreshToken, { foreignKey: 'userId', onDelete: 'CASCADE' });
     RefreshToken.belongsTo(User, { foreignKey: 'userId' });
+
+    /** Discord Server **/
+
+    // Un User peut créer plusieurs serveurs
+    User.hasMany(Server, { foreignKey: 'createdBy', onDelete: 'CASCADE' });
+    Server.belongsTo(User, { foreignKey: 'createdBy' });
+
+    // Config des salons liés à un Server
+    Server.hasMany(ChannelConfig, { foreignKey: 'serverId', onDelete: 'CASCADE' });
+    ChannelConfig.belongsTo(Server, { foreignKey: 'serverId' });
+
+    // Logs de modération pour un serveur
+    Server.hasMany(ModerationLog, { foreignKey: 'serverId', onDelete: 'CASCADE' });
+    ModerationLog.belongsTo(Server, { foreignKey: 'serverId' });
+
+    // Système de level
+    Server.hasMany(UserLevel, { foreignKey: 'serverId', onDelete: 'CASCADE' });
+    UserLevel.belongsTo(Server, { foreignKey: 'serverId' });
+
+    // Snapshots de membres
+    Server.hasMany(MemberSnapshot, { foreignKey: 'serverId', onDelete: 'CASCADE' });
+    MemberSnapshot.belongsTo(Server, { foreignKey: 'serverId' });
+
+    /** Module The Division 2 **/
+
+    Server.hasMany(DivisionConfig, { foreignKey: 'serverId', onDelete: 'CASCADE' });
+    DivisionConfig.belongsTo(Server, { foreignKey: 'serverId' });
+
+    Server.hasMany(Td2Blacklist, { foreignKey: 'serverId', onDelete: 'CASCADE' });
+    Td2Blacklist.belongsTo(Server, { foreignKey: 'serverId' });
+
+    Server.hasMany(Td2Activity, { foreignKey: 'serverId', onDelete: 'CASCADE' });
+    Td2Activity.belongsTo(Server, { foreignKey: 'serverId' });
 }
 
 module.exports = initModels;
