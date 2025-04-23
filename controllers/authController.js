@@ -4,7 +4,8 @@ const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
-
+const {setToken} = require("../services/discordTokenCache");
+require('dotenv').config();
 const ACCESS_TOKEN_EXPIRES = '15m';
 const REFRESH_TOKEN_EXPIRES = '7d';
 
@@ -119,14 +120,18 @@ exports.discordCallback = async (req, res) => {
                 username: discordUser.username,
                 discordId: discordUser.id,
                 avatar: discordUser.avatar,
-                role: 'admin' // À sécuriser en prod
+                role: 'admin' // ⚠️ À ajuster en prod
             });
         } else {
             user.avatar = discordUser.avatar;
             await user.save();
         }
 
-        // 4. Génération des tokens JWT
+        // 4. Stockage accessToken (dans Redis ou cache local)
+        await setToken(user.id, accessToken);
+        console.log('storage')
+
+        // 5. JWT
         const jwtAccessToken = generateAccessToken(user.id, user.role);
         const tokenId = uuidv4();
         const jwtRefreshToken = generateRefreshToken(user.id, tokenId);
@@ -134,9 +139,13 @@ exports.discordCallback = async (req, res) => {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
-        await RefreshToken.create({ token: tokenId, UserId: user.id, expiresAt });
+        await RefreshToken.create({
+            token: tokenId,
+            UserId: user.id,
+            expiresAt
+        });
 
-        // 5. Cookie HTTPOnly avec refresh token
+        // 6. Cookie HTTPOnly avec refresh token
         res.cookie('refreshToken', jwtRefreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -144,12 +153,14 @@ exports.discordCallback = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
-        // 6. Redirection vers l'app front
+        // 7. Redirection vers le front
         res.redirect(process.env.FRONT_URL || 'http://localhost:5173/');
-
     } catch (err) {
         console.error('Discord OAuth Error:', err.response?.data || err.message);
-        res.status(400).json({ message: 'Discord OAuth error', details: err.response?.data || err.message });
+        res.status(400).json({
+            message: 'Discord OAuth error',
+            details: err.response?.data || err.message
+        });
     }
 };
 

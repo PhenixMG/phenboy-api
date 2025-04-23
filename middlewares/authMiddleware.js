@@ -9,19 +9,29 @@ const jwt = require('jsonwebtoken');
  * @returns {401} Unauthorized si token absent ou invalide
  */
 const authMiddleware = (req, res, next) => {
-    const authHeader = req.headers.authorization;
+    const token = req.headers.authorization?.split(' ')[1];
+    const apiKey = req.headers['x-api-key'];
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Unauthorized' });
+    // Auth spéciale BOT interne
+    if (apiKey && apiKey === process.env.INTERNAL_API_KEY) {
+        req.user = {
+            id: 'bot',
+            role: 'bot',
+            isBot: true
+        };
+        return next();
     }
 
-    const token = authHeader.split(' ')[1];
+    // Auth classique JWT
+    if (!token) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
 
     try {
         req.user = jwt.verify(token, process.env.JWT_SECRET); // { id, role }
         next();
     } catch (err) {
-        res.status(401).json({ message: 'Invalid or expired token' });
+        return res.status(401).json({ message: 'Invalid or expired token' });
     }
 };
 

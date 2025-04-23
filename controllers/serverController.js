@@ -1,4 +1,6 @@
 const Server = require('../models/Server');
+const {get} = require("axios");
+const {getToken} = require("../services/discordTokenCache");
 
 /**
  * @swagger
@@ -150,5 +152,40 @@ exports.toggleTD2Module = async (req, res) => {
     } catch (err) {
         console.error('toggleTD2Module error:', err);
         res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * Récupère les serveurs Discord où l'utilisateur est propriétaire
+ * @route GET /discord/servers
+ */
+exports.getUserGuilds = async (req, res) => {
+    console.log('called')
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const userId = req.user.id;
+    const token = await getToken(userId);
+    console.log(userId)
+
+    if (!token) {
+        return res.status(401).json({ message: 'Token Discord manquant ou expiré.' });
+    }
+
+    try {
+        const response = await get('https://discord.com/api/users/@me/guilds', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('test')
+
+        // Ne renvoyer que les serveurs où l'utilisateur est propriétaire
+        const ownedGuilds = response.data.filter(guild => guild.owner);
+        res.json(ownedGuilds);
+    } catch (err) {
+        console.error('Erreur Discord OAuth:', err.response?.data || err.message);
+        res.status(500).json({ message: 'Failed to fetch Discord guilds' });
     }
 };

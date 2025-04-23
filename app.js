@@ -12,6 +12,8 @@ const moderationRoutes = require('./routes/moderationRoutes');
 const levelRoutes = require('./routes/levelRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const divisionRoutes = require('./routes/divisionRoutes');
+const serverRoutes = require('./routes/serverRoutes');
+
 
 // 🔐 Middlewares
 const errorHandler = require('./middlewares/errorHandler');
@@ -49,6 +51,9 @@ app.use('/admin', adminRoutes);        // /channels
 app.use('/admin', levelRoutes);        // /levels
 app.use('/admin', statsRoutes);        // /stats
 app.use('/admin', moderationRoutes);   // /modlogs
+
+//Serveurs
+app.use('/server', serverRoutes)
 
 // 🎮 The Division 2 Module
 app.use('/division', divisionRoutes);
