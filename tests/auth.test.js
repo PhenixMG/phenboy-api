@@ -22,7 +22,7 @@ let refreshToken;
 let tokenId;
 
 beforeAll(async () => {
-    await sequelize.sync({ force: true }); // reset db
+    await sequelize.sync({ force: true });
 
     // Créer d'abord un User en BDD
     await User.create({
