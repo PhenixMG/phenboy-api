@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController');
+const { getProfile, getAllUsers} = require('../controllers/userController');
+const isAuthenticated = require('../middlewares/isAuthenticated');
+const isAdmin = require('../middlewares/isAdmin');
 
-/**
- * @route GET /users
- * @desc Récupère tous les utilisateurs (admin-only ?)
- * @access Public / à sécuriser ?
- */
-router.get('/', userController.getAllUsers);
+// Renvoie les infos du user connecté
+router.get('/me', isAuthenticated, getProfile);
+
+// Route admin pour voir tous les utilisateurs
+router.get('/users', isAuthenticated, isAdmin, getAllUsers);
 
 module.exports = router;

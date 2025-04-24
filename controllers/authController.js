@@ -1,91 +1,9 @@
-const { verify, sign } = require("jsonwebtoken");
-const { compare, hash } = require("bcrypt");
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
-const User = require('../models/User');
-const RefreshToken = require('../models/RefreshToken');
-const {setToken} = require("../services/discordTokenCache");
-require('dotenv').config();
-const ACCESS_TOKEN_EXPIRES = '15m';
-const REFRESH_TOKEN_EXPIRES = '7d';
+const { User } = require('../models/User');
+const { RefreshToken } = require('../models/RefreshToken');
+const { generateAccessToken, generateRefreshToken } = require('../services/tokenService');
 
-/**
- * @swagger
- * /auth/token/access:
- *   post:
- *     summary: Génère un token d'accès pour un utilisateur
- *     tags: [Auth - Tokens]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               userId:
- *                 type: integer
- *               role:
- *                 type: string
- *                 enum: [user, mods, admin]
- *     responses:
- *       200:
- *         description: Access token généré
- *         content:
- *           application/json:
- *             schema:
- *               type: string
- */
-const generateAccessToken = (userId, role) => {
-    return sign({ id: userId, role }, process.env.JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES });
-};
-
-/**
- * @swagger
- * /auth/token/refresh:
- *   post:
- *     summary: Génère un token de rafraîchissement JWT
- *     tags: [Auth - Tokens]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               userId:
- *                 type: integer
- *               tokenId:
- *                 type: string
- *     responses:
- *       200:
- *         description: Refresh token généré
- *         content:
- *           application/json:
- *             schema:
- *               type: string
- */
-const generateRefreshToken = (userId, tokenId) => {
-    return sign({ id: userId, jti: tokenId }, process.env.JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES });
-};
-
-/**
- * @swagger
- * /auth/discord/callback:
- *   get:
- *     summary: Callback OAuth2 pour connexion via Discord
- *     tags: [Auth]
- *     parameters:
- *       - in: query
- *         name: code
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       302:
- *         description: Redirection vers le front avec session initiée
- *       400:
- *         description: Code manquant ou erreur OAuth
- */
 exports.discordCallback = async (req, res) => {
     const code = req.query.code;
     if (!code) return res.status(400).json({ message: 'Code not provided' });
@@ -104,8 +22,9 @@ exports.discordCallback = async (req, res) => {
         });
 
         const accessToken = tokenResponse.data.access_token;
+        const expiresIn = tokenResponse.data.expires_in;
 
-        // 2. Récupération des infos utilisateur via Discord API
+        // 2. Infos utilisateur Discord
         const userResponse = await axios.get('https://discord.com/api/users/@me', {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
@@ -120,16 +39,16 @@ exports.discordCallback = async (req, res) => {
                 username: discordUser.username,
                 discordId: discordUser.id,
                 avatar: discordUser.avatar,
-                role: 'admin' // ⚠️ À ajuster en prod
+                role: 'admin' // À ajuster
             });
         } else {
             user.avatar = discordUser.avatar;
-            await user.save();
         }
 
-        // 4. Stockage accessToken (dans Redis ou cache local)
-        await setToken(user.id, accessToken);
-        console.log('storage')
+        // 4. Stockage access token + expiration
+        user.discordAccessToken = accessToken;
+        user.discordTokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
+        await user.save();
 
         // 5. JWT
         const jwtAccessToken = generateAccessToken(user.id, user.role);
@@ -145,7 +64,7 @@ exports.discordCallback = async (req, res) => {
             expiresAt
         });
 
-        // 6. Cookie HTTPOnly avec refresh token
+        // 6. Cookie HTTPOnly
         res.cookie('refreshToken', jwtRefreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -153,7 +72,7 @@ exports.discordCallback = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
-        // 7. Redirection vers le front
+        // 7. Redirection
         res.redirect(process.env.FRONT_URL || 'http://localhost:5173/');
     } catch (err) {
         console.error('Discord OAuth Error:', err.response?.data || err.message);
@@ -164,190 +83,44 @@ exports.discordCallback = async (req, res) => {
     }
 };
 
-/**
- * @swagger
- * /auth/refresh-token:
- *   post:
- *     summary: Rafraîchit un accessToken à partir d'un refreshToken valide
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               refreshToken:
- *                 type: string
- *     responses:
- *       200:
- *         description: Nouveau accessToken retourné
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 accessToken:
- *                   type: string
- *       401:
- *         description: Token invalide ou expiré
- */
+exports.logout = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) return res.sendStatus(204);
+
+    try {
+        const payload = require('jsonwebtoken').verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        await RefreshToken.destroy({ where: { token: payload.jti } });
+
+        const user = await User.findByPk(payload.id);
+        if (user) {
+            user.discordAccessToken = null;
+            user.discordTokenExpiresAt = null;
+            await user.save();
+        }
+    } catch (_) {
+        // ignore invalid token
+    }
+
+    res.clearCookie('refreshToken');
+    res.sendStatus(204);
+};
+
 exports.refreshToken = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) return res.sendStatus(401);
+
     try {
-        const { refreshToken } = req.body;
-        if (!refreshToken) return res.status(401).json({ message: 'Refresh token required' });
+        const payload = require('jsonwebtoken').verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const dbToken = await RefreshToken.findOne({ where: { token: payload.jti } });
 
-        const decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        const tokenId = decoded.jti;
-
-        const storedToken = await RefreshToken.findOne({ where: { token: tokenId } });
-        if (!storedToken) return res.status(401).json({ message: 'Invalid refresh token' });
-
-        if (new Date() > storedToken.expiresAt) {
-            await storedToken.destroy();
-            return res.status(401).json({ message: 'Refresh token expired' });
+        if (!dbToken || dbToken.expiresAt < new Date()) {
+            return res.sendStatus(403);
         }
 
-        const newAccessToken = generateAccessToken(decoded.id, decoded.role);
-        res.json({ accessToken: newAccessToken });
-    } catch (err) {
-        res.status(401).json({ message: 'Invalid refresh token' });
-    }
-};
-
-/**
- * @swagger
- * /auth/logout:
- *   post:
- *     summary: Déconnecte l'utilisateur actuel (révoque le refreshToken utilisé)
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               refreshToken:
- *                 type: string
- *     responses:
- *       200:
- *         description: Déconnexion réussie
- *       400:
- *         description: Token manquant
- *       401:
- *         description: Token invalide ou expiré
- */
-exports.logout = async (req, res, next) => {
-    try {
-        const { refreshToken } = req.body;
-        if (!refreshToken) return res.status(400).json({ message: 'Refresh token required' });
-
-        const decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        const tokenId = decoded.jti;
-
-        await RefreshToken.destroy({ where: { token: tokenId } });
-
-        res.json({ message: 'Logged out successfully' });
-    } catch (err) {
-        next(err);
-    }
-};
-
-/**
- * @swagger
- * /auth/logout-all:
- *   post:
- *     summary: Déconnecte l'utilisateur de tous les appareils
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               userId:
- *                 type: integer
- *     responses:
- *       200:
- *         description: Sessions révoquées
- *       400:
- *         description: Paramètre manquant
- */
-exports.logoutAll = async (req, res, next) => {
-    try {
-        const { userId } = req.body;
-        if (!userId) return res.status(400).json({ message: 'User ID required' });
-
-        await RefreshToken.destroy({ where: { UserId: userId } });
-
-        res.json({ message: 'Logged out from all devices' });
-    } catch (err) {
-        next(err);
-    }
-};
-
-/**
- * @swagger
- * /auth/me:
- *   get:
- *     summary: Récupère l'utilisateur connecté via le cookie refreshToken
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Retourne les infos de l'utilisateur + un nouveau accessToken
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 accessToken:
- *                   type: string
- *                 user:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     username:
- *                       type: string
- *                     avatar:
- *                       type: string
- *       401:
- *         description: Token invalide ou expiré
- */
-exports.getMe = async (req, res) => {
-    try {
-        const refreshToken = req.cookies.refreshToken;
-        if (!refreshToken) return res.status(401).json({ message: 'Not authenticated' });
-
-        const decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-
-        const storedToken = await RefreshToken.findOne({ where: { token: decoded.jti } });
-        if (!storedToken) return res.status(401).json({ message: 'Invalid refresh token' });
-
-        if (new Date() > storedToken.expiresAt) {
-            await storedToken.destroy();
-            return res.status(401).json({ message: 'Refresh token expired' });
-        }
-
-        const user = await User.findByPk(decoded.id);
-        if (!user) return res.status(401).json({ message: 'User not found' });
-
+        const user = await User.findByPk(payload.id);
         const newAccessToken = generateAccessToken(user.id, user.role);
-
-        res.json({
-            accessToken: newAccessToken,
-            user: {
-                id: user.discordId,
-                avatar: user.avatar,
-                username: user.username
-            }
-        });
-    } catch (err) {
-        console.error('Auth Me Error:', err);
-        res.status(401).json({ message: 'Invalid session' });
+        res.json({ accessToken: newAccessToken });
+    } catch (_) {
+        res.sendStatus(403);
     }
 };

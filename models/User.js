@@ -1,3 +1,4 @@
+// models/User.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../db/database');
 
@@ -10,6 +11,8 @@ const { sequelize } = require('../db/database');
  * @property {string} username - Nom d'utilisateur unique
  * @property {string} [avatar] - URL de l'avatar Discord
  * @property {'user'|'mods'|'admin'} role - Rôle système
+ * @property {string} [discordAccessToken] - Token d'accès temporaire Discord (non exposé au front)
+ * @property {Date} [discordTokenExpiresAt] - Date d'expiration du token Discord
  * @association hasMany Post, Server, RefreshToken
  * @timestamps createdAt, updatedAt
  */
@@ -17,7 +20,7 @@ const User = sequelize.define('User', {
     discordId: {
         type: DataTypes.STRING,
         allowNull: true,
-        unique: true // Peut être vide si inscrit localement, mais unique si présent
+        unique: true
     },
     username: {
         type: DataTypes.STRING,
@@ -32,6 +35,14 @@ const User = sequelize.define('User', {
         type: DataTypes.ENUM('user', 'mods', 'admin'),
         allowNull: false,
         defaultValue: 'user'
+    },
+    discordAccessToken: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    discordTokenExpiresAt: {
+        type: DataTypes.DATE,
+        allowNull: true
     }
 });
 

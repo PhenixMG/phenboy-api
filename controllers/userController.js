@@ -1,66 +1,31 @@
-const User = require('../models/User');
+const { User } = require('../models/User');
 
 /**
- * @swagger
- * /users:
- *   get:
- *     summary: Récupère la liste de tous les utilisateurs
- *     tags: [Public - Users]
- *     responses:
- *       200:
- *         description: Liste des utilisateurs
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   username:
- *                     type: string
- *                   role:
- *                     type: string
+ * Récupère le profil de l'utilisateur connecté (via JWT)
  */
-exports.getAllUsers = async (req, res) => {
+exports.getProfile = async (req, res) => {
     try {
-        const users = await User.findAll();
-        res.json(users);
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.sendStatus(404);
+
+        // Ne jamais renvoyer le token Discord
+        const { discordAccessToken, discordTokenExpiresAt, ...safeUser } = user.toJSON();
+        res.json(safeUser);
     } catch (err) {
-        console.error('getAllUsers error:', err);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ error: 'Failed to retrieve user profile' });
     }
 };
 
 /**
- * @swagger
- * /users/{id}:
- *   get:
- *     summary: Récupère un utilisateur par son ID
- *     tags: [Public - Users]
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Utilisateur trouvé
- *       404:
- *         description: Utilisateur non trouvé
+ * Récupération de tous les utilisateurs (admin only)
  */
-exports.getOneUser = async (req, res, next) => {
+exports.getAllUsers = async (req, res) => {
     try {
-        const user = await User.findByPk(req.params.id);
-        if (!user) {
-            const error = new Error('User not found');
-            error.status = 404;
-            throw error;
-        }
-        res.json(user);
+        const users = await User.findAll({
+            attributes: { exclude: ['discordAccessToken', 'discordTokenExpiresAt'] }
+        });
+        res.json(users);
     } catch (err) {
-        next(err); // Passe l'erreur au gestionnaire global
+        res.status(500).json({ error: 'Failed to retrieve user list' });
     }
 };
