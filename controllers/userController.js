@@ -1,5 +1,8 @@
 const User = require('../models/User');
 const Server = require('../models/Server');
+const { Op } = require('sequelize');
+const MemberSnapshot = require('../models/MemberSnapshot');
+const ModerationLog = require('../models/ModerationLog');
 const ServerChannelConfig = require('../models/ServerChannelConfig');
 /**
  * Récupère le profil de l'utilisateur connecté (via JWT)
@@ -99,5 +102,60 @@ exports.saveGuildConfiguration = async (req, res) => {
     } catch (err) {
         console.error('[saveGuildConfiguration] Error:', err);
         res.status(500).json({ error: 'Erreur lors de la sauvegarde de la configuration.' });
+    }
+};
+
+exports.getDashboardData = async (req, res) => {
+    const serverId = req.params.id;
+    const userId = req.user.id;
+
+    try {
+        // Vérifie que l'utilisateur a accès
+        const server = await Server.findByPk(serverId);
+        if (!server || server.createdBy !== userId) {
+            return res.status(403).json({ error: 'Accès refusé' });
+        }
+
+        // 1. MemberSnapshot (7 derniers jours)
+        const now = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(now.getDate() - 6); // Inclut aujourd'hui
+
+        const snapshots = await MemberSnapshot.findAll({
+            where: {
+                serverId,
+                createdAt: {
+                    [Op.gte]: sevenDaysAgo
+                }
+            },
+            order: [['createdAt', 'ASC']]
+        });
+
+        const memberStats = snapshots.map(snap => ({
+            date: snap.createdAt.toISOString().split('T')[0],
+            count: snap.memberCount
+        }));
+
+        // 2. Logs de modération
+        const moderationLogs = await ModerationLog.findAll({
+            where: { serverId },
+            order: [['createdAt', 'DESC']],
+            limit: 50
+        });
+
+        // 3. Configs
+        const config = await ServerChannelConfig.findAll({
+            where: { serverId },
+            attributes: ['scope', 'type', 'channelId']
+        });
+
+        res.json({
+            memberStats,
+            moderationLogs,
+            config
+        });
+    } catch (err) {
+        console.error('[getDashboardData] Error:', err);
+        res.status(500).json({ error: 'Erreur lors du chargement du dashboard' });
     }
 };

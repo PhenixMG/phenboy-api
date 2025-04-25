@@ -2,6 +2,7 @@ require('dotenv').config();
 const discordService = require('../services/discordService');
 const {get} = require("axios");
 const User = require('../models/User');
+const Server = require('../models/Server');
 const {getGuildChannels} = require("../services/discordService");
 
 exports.getDiscordProfile = async (req, res) => {
@@ -17,29 +18,38 @@ exports.getDiscordProfile = async (req, res) => {
 
 exports.getDiscordGuilds = async (req, res) => {
     try {
-        // 1. Guilds de l'utilisateur
+        // 1. Récupère les guilds de l'utilisateur (via OAuth)
         const userGuilds = await discordService.getUserGuilds(req.user.id);
 
-        // 2. Guilds du bot
+        // 2. Récupère les guilds du bot
         const botGuildResponse = await get('https://discord.com/api/users/@me/guilds', {
             headers: {
                 Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`
             }
         });
-        console.log(process.env.DISCORD_BOT_TOKEN)
 
         const botGuildIds = botGuildResponse.data.map(g => g.id);
 
-        // 3. Filtrer les guilds où user est owner et bot est présent
+        // 3. Récupère les serveurs déjà configurés en base
+        const configuredServers = await Server.findAll({
+            where: { createdBy: req.user.id },
+            attributes: ['discordId']
+        });
+
+        const configuredIds = configuredServers.map(s => s.discordId);
+
+        // 4. Filtrer : user owner + bot présent + pas déjà configuré
         const filtered = userGuilds.filter(guild =>
-            guild.owner === true && botGuildIds.includes(guild.id)
+            guild.owner === true &&
+            botGuildIds.includes(guild.id) &&
+            !configuredIds.includes(guild.id)
         );
 
         res.json(filtered);
-    }catch (err) {
-            console.error('Error fetching Discord guilds:', err.message);
-            const status = err.message.includes('expired') ? 401 : 400;
-            res.status(status).json({ error: err.message });
+    } catch (err) {
+        console.error('Error fetching Discord guilds:', err.message);
+        const status = err.message.includes('expired') ? 401 : 400;
+        res.status(status).json({ error: err.message });
     }
 };
 
