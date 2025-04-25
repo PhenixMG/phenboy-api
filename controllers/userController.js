@@ -26,13 +26,14 @@ exports.getProfile = async (req, res) => {
  */
 exports.getUserConfiguredServers = async (req, res) => {
     try {
+        console.log('pok')
         const user = await User.findByPk(req.user.id, {
             include: { model: Server, as: 'Servers' } // ou 'guilds', selon ton association
         });
 
         if (!user) return res.sendStatus(404);
 
-        res.json(user.servers); // ou user.guilds selon ton modèle
+        res.json(user.Servers); // ou user.guilds selon ton modèle
     } catch (err) {
         console.error('[getUserConfiguredServers] Error:', err);
         res.status(500).json({ error: 'Erreur lors de la récupération des serveurs' });

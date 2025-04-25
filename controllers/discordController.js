@@ -43,6 +43,25 @@ exports.getDiscordGuilds = async (req, res) => {
     }
 };
 
+exports.getSpecificGuild = async (req, res) => {
+    const guildId = req.params.guildId;
+
+    try {
+        const response = await get(`https://discord.com/api/guilds/${guildId}`, {
+            headers: {
+                Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`
+            }
+        });
+
+        const { id, name, icon } = response.data;
+
+        res.json({ id, name, icon });
+    } catch (err) {
+        console.error('Erreur lors de la récupération du serveur:', err.message);
+        res.status(400).json({ error: 'Impossible de récupérer les infos du serveur.' });
+    }
+}
+
 exports.getGuildChannels = async (req, res) => {
     const guildId = req.params.guildId;
 
