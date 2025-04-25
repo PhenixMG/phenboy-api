@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { login, logout, refreshToken, discordCallback } = require('../controllers/authController');
+const { logout, refreshToken, discordCallback } = require('../controllers/authController');
 
 router.get('/discord/callback', discordCallback);
 router.post('/logout', logout);

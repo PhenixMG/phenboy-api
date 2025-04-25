@@ -1,11 +1,13 @@
+require('dotenv').config();
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
-const { User } = require('../models/User');
-const { RefreshToken } = require('../models/RefreshToken');
+const User = require('../models/User');
+const RefreshToken = require('../models/RefreshToken');
 const { generateAccessToken, generateRefreshToken } = require('../services/tokenService');
 
 exports.discordCallback = async (req, res) => {
     const code = req.query.code;
+    console.log('code', code);
     if (!code) return res.status(400).json({ message: 'Code not provided' });
 
     try {
@@ -31,6 +33,7 @@ exports.discordCallback = async (req, res) => {
 
         const discordUser = userResponse.data;
 
+        console.log('User model:', User);
         // 3. Création ou mise à jour de l'utilisateur local
         let user = await User.findOne({ where: { discordId: discordUser.id } });
 
@@ -51,7 +54,6 @@ exports.discordCallback = async (req, res) => {
         await user.save();
 
         // 5. JWT
-        const jwtAccessToken = generateAccessToken(user.id, user.role);
         const tokenId = uuidv4();
         const jwtRefreshToken = generateRefreshToken(user.id, tokenId);
 

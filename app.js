@@ -3,8 +3,16 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const discordRoutes = require('./routes/discordRoutes');
+const cors = require('cors');
+const initModels = require("./models/initModels");
 
 const app = express();
+
+app.use(cors({
+    origin: process.env.FRONT_URL || 'http://localhost:5173',
+    credentials: true // ⬅️ Autorise l'envoi de cookies
+}));
+
 
 app.use(express.json());
 app.use(cookieParser());
@@ -13,4 +21,5 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/discord', discordRoutes);
 
+initModels();
 module.exports = app;

@@ -16,6 +16,11 @@ const User = require('./User');
  * @timestamps createdAt, updatedAt
  */
 const Server = sequelize.define('Server', {
+    id: {
+        type: DataTypes.INTEGER, // ✅ auto_increment ID SQL
+        primaryKey: true,
+        autoIncrement: true
+    },
     name: {
         type: DataTypes.STRING,
         allowNull: false

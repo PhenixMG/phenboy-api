@@ -4,12 +4,11 @@ const Post = require('./Post');
 const Thread = require('./Thread');
 const Category = require('./Category');
 const RefreshToken = require('./RefreshToken');
-const ChannelConfig = require('./ChannelConfig');
+const ServerChannelConfig = require('./ServerChannelConfig');
 const Server = require('./Server');
 const ModerationLog = require('./ModerationLog');
 const UserLevel = require('./UserLevel');
 const MemberSnapshot = require('./MemberSnapshot');
-const DivisionConfig = require('./DivisionConfig');
 const Td2Blacklist = require('./Td2Blacklist');
 const Td2Activity = require('./Td2Activity');
 
@@ -50,8 +49,8 @@ function initModels() {
     Server.belongsTo(User, { foreignKey: 'createdBy' });
 
     // Config des salons liés à un Server
-    Server.hasMany(ChannelConfig, { foreignKey: 'serverId', onDelete: 'CASCADE' });
-    ChannelConfig.belongsTo(Server, { foreignKey: 'serverId' });
+    Server.hasMany(ServerChannelConfig, { foreignKey: 'serverId', as: 'channelConfigs', onDelete: 'CASCADE' });
+    ServerChannelConfig.belongsTo(Server, { foreignKey: 'serverId' });
 
     // Logs de modération pour un serveur
     Server.hasMany(ModerationLog, { foreignKey: 'serverId', onDelete: 'CASCADE' });
@@ -66,9 +65,6 @@ function initModels() {
     MemberSnapshot.belongsTo(Server, { foreignKey: 'serverId' });
 
     /** Module The Division 2 **/
-
-    Server.hasMany(DivisionConfig, { foreignKey: 'serverId', onDelete: 'CASCADE' });
-    DivisionConfig.belongsTo(Server, { foreignKey: 'serverId' });
 
     Server.hasMany(Td2Blacklist, { foreignKey: 'serverId', onDelete: 'CASCADE' });
     Td2Blacklist.belongsTo(Server, { foreignKey: 'serverId' });

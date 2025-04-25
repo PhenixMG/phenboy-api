@@ -1,6 +1,7 @@
 // services/discordService.js
+require('dotenv').config()
 const axios = require('axios');
-const { User } = require('../models/User'); // adapte le chemin si besoin
+const User = require('../models/User'); // adapte le chemin si besoin
 
 /**
  * Helper pour logger les erreurs Discord
@@ -33,7 +34,7 @@ async function revokeDiscordToken(userId) {
 /**
  * Récupère des données depuis un endpoint Discord
  */
-async function fetchDiscord(userId, endpoint) {
+async function fetchDiscord(userId, endpoint, guildId) {
     const user = await User.findByPk(userId);
     if (!user) throw new Error('User not found');
 
@@ -50,6 +51,7 @@ async function fetchDiscord(userId, endpoint) {
     } catch (err) {
         if (err.response?.status === 401) {
             await revokeDiscordToken(userId);
+            throw new Error('Invalid or expired Discord token');
         }
         logDiscordError(`fetch ${endpoint}`, err);
         throw err;
@@ -62,8 +64,35 @@ async function getUserGuilds(userId) {
     return fetchDiscord(userId, '/users/@me/guilds');
 }
 
+async function getGuildChannels(userId, guildId) {
+    const user = await User.findByPk(userId);
+    if (!user) throw new Error('Utilisateur introuvable');
+
+    if (isTokenExpired(user)) {
+        await revokeDiscordToken(userId);
+        throw new Error('Token Discord expiré');
+    }
+
+    try {
+        console.log(user.discordAccessToken)
+        const response = await axios.get(`https://discord.com/api/guilds/${guildId}/channels`, {
+            headers: {
+                Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`
+            }
+        });
+        return response.data;
+    } catch (err) {
+        if (err.response?.status === 401) {
+            await revokeDiscordToken(userId);
+        }
+        logDiscordError(`fetch guild channels for ${guildId}`, err);
+        throw err;
+    }
+}
+
 module.exports = {
     getUserGuilds,
+    getGuildChannels,
     revokeDiscordToken,
     isTokenExpired
 };
