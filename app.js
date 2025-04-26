@@ -2,7 +2,8 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
-const discordRoutes = require('./routes/discordRoutes');
+const serverRoutes = require('./routes/serverRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const cors = require('cors');
 const initModels = require("./models/initModels");
 
@@ -19,7 +20,8 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/discord', discordRoutes);
+app.use('/api/servers', serverRoutes);
+app.use('/api/admin', adminRoutes)
 
 initModels();
 module.exports = app;

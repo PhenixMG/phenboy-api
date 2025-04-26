@@ -43,20 +43,6 @@ exports.getUserConfiguredServers = async (req, res) => {
     }
 };
 
-/**
- * Récupération de tous les utilisateurs (admin only)
- */
-exports.getAllUsers = async (req, res) => {
-    try {
-        const users = await User.findAll({
-            attributes: { exclude: ['discordAccessToken', 'discordTokenExpiresAt'] }
-        });
-        res.json(users);
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to retrieve user list' });
-    }
-};
-
 exports.saveGuildConfiguration = async (req, res) => {
     const serverId = req.params.serverId;
     const { config = [], moduleEnabled } = req.body;
@@ -106,27 +92,26 @@ exports.saveGuildConfiguration = async (req, res) => {
 };
 
 exports.getDashboardData = async (req, res) => {
-    const serverId = req.params.id;
+    const serverId = req.params.serverId;
     const userId = req.user.id;
 
     try {
-        // Vérifie que l'utilisateur a accès
+        console.log(serverId)
         const server = await Server.findByPk(serverId);
+        console.log(server)
         if (!server || server.createdBy !== userId) {
             return res.status(403).json({ error: 'Accès refusé' });
         }
 
-        // 1. MemberSnapshot (7 derniers jours)
+        // 📈 MemberSnapshot sur 7 jours
         const now = new Date();
         const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(now.getDate() - 6); // Inclut aujourd'hui
+        sevenDaysAgo.setDate(now.getDate() - 6);
 
         const snapshots = await MemberSnapshot.findAll({
             where: {
                 serverId,
-                createdAt: {
-                    [Op.gte]: sevenDaysAgo
-                }
+                createdAt: { [Op.gte]: sevenDaysAgo }
             },
             order: [['createdAt', 'ASC']]
         });
@@ -136,24 +121,50 @@ exports.getDashboardData = async (req, res) => {
             count: snap.memberCount
         }));
 
-        // 2. Logs de modération
+        // 🚨 Moderation logs
         const moderationLogs = await ModerationLog.findAll({
             where: { serverId },
             order: [['createdAt', 'DESC']],
             limit: 50
         });
 
-        // 3. Configs
+        // ⚙️ Config salons
         const config = await ServerChannelConfig.findAll({
             where: { serverId },
             attributes: ['scope', 'type', 'channelId']
         });
 
+        // 🎮 TD2 - Si activé
+        let td2Data = null;
+        if (server.td2Enabled) {
+            const activities = await Td2Activity.findAll({
+                where: { serverId },
+                order: [['createdAt', 'DESC']],
+                limit: 20
+            });
+
+            const blacklist = await Td2Blacklist.findAll({
+                where: { serverId },
+                order: [['createdAt', 'DESC']],
+                limit: 20
+            });
+
+            td2Data = {
+                activities,
+                blacklist
+            };
+        }
+
         res.json({
             memberStats,
             moderationLogs,
-            config
+            config,
+            server: {
+                td2Enabled: server.td2Enabled
+            },
+            td2: td2Data // <--- envoyé que si activé
         });
+
     } catch (err) {
         console.error('[getDashboardData] Error:', err);
         res.status(500).json({ error: 'Erreur lors du chargement du dashboard' });
