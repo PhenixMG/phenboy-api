@@ -4,6 +4,8 @@ const { Op } = require('sequelize');
 const MemberSnapshot = require('../models/MemberSnapshot');
 const ModerationLog = require('../models/ModerationLog');
 const ServerChannelConfig = require('../models/ServerChannelConfig');
+const Td2Activity = require('../models/Td2Activity');
+const Td2Blacklist = require('../models/Td2Blacklist');
 /**
  * Récupère le profil de l'utilisateur connecté (via JWT)
  */
