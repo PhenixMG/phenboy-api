@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Server = require('../models/Server');
 const ModerationLog = require('../models/ModerationLog');
 const {sendWebhookToBot} = require("../services/webhookService");
 
@@ -18,12 +19,19 @@ exports.getAllUsers = async (req, res) => {
 
 exports.getSanctions = async (req, res) => {
     try {
-        let discordId = req.query.discordId;
+        let discordId = req.params.discordId;
+        console.log(discordId)
         const sanctions = await ModerationLog.findAll({
             attributes: { exclude: ['userId', 'serverId'] },
-            where: {
-                discordId: discordId
-            }
+            include: [
+                {
+                    model: Server,
+                    attributes: [], // Ne récupère aucune colonne de Server (sauf pour la condition)
+                    where: {
+                        discordId: discordId
+                    }
+                }
+            ]
         });
         res.json(sanctions);
     } catch (err) {

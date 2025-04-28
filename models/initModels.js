@@ -69,8 +69,9 @@ function initModels() {
     Server.hasMany(Td2Blacklist, { foreignKey: 'serverId', onDelete: 'CASCADE' });
     Td2Blacklist.belongsTo(Server, { foreignKey: 'serverId' });
 
-    Server.hasMany(Td2Activity, { foreignKey: 'serverId', onDelete: 'CASCADE' });
-    Td2Activity.belongsTo(Server, { foreignKey: 'serverId' });
+    Server.hasMany(Td2Activity, { foreignKey: 'serverDiscordId', sourceKey: 'discordId', onDelete: 'CASCADE' });
+    Td2Activity.belongsTo(Server, { foreignKey: 'serverDiscordId', targetKey: 'discordId' });
+
 }
 
 module.exports = initModels;

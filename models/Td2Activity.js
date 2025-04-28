@@ -16,7 +16,7 @@ const Server = require('./Server');
  */
 const Td2Activity = sequelize.define('Td2Activity', {
     type: {
-        type: DataTypes.ENUM('raid', 'incursion', 'event'),
+        type: DataTypes.ENUM('raid', 'incursion', 'activité'),
         allowNull: false
     },
     title: {
@@ -30,6 +30,10 @@ const Td2Activity = sequelize.define('Td2Activity', {
     description: {
         type: DataTypes.TEXT,
         allowNull: true
+    },
+    serverDiscordId: { // <-- On relie via discordId maintenant
+        type: DataTypes.STRING,
+        allowNull: false
     }
 }, {
     timestamps: true

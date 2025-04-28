@@ -20,9 +20,9 @@ const ServerChannelConfig = sequelize.define('ServerChannelConfig', {
     type: {
         type: DataTypes.ENUM(
             // Core
-            'log', 'welcome', 'goodbye', 'announcement',
+            'log', 'bienvenue', 'au-revoir', 'annonces',
             // Division 2
-            'raids', 'incursions', 'activities', 'blacklist'
+            'raid', 'incursion', 'activité', 'blacklist'
         ),
         allowNull: false
     },

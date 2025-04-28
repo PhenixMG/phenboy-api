@@ -52,7 +52,11 @@ exports.saveGuildConfiguration = async (req, res) => {
 
     try {
         // Vérifie que le serveur appartient bien à l'utilisateur
-        let server = await Server.findByPk(serverId);
+        let server = await Server.findOne({
+            where: {
+                discordId: serverId,
+            }
+        });
 
         // Si le serveur n'existe pas encore, on le crée
         if (!server) {

@@ -2,7 +2,9 @@ require('dotenv').config();
 const discordService = require('../services/discordService');
 const {get} = require("axios");
 const Server = require('../models/Server');
+const ServerChannelConfig = require('../models/ServerChannelConfig');
 const {getGuildChannels} = require("../services/discordService");
+const axios = require("axios");
 
 exports.getDiscordGuilds = async (req, res) => {
     try {
@@ -60,11 +62,19 @@ exports.getSpecificGuild = async (req, res) => {
     }
 }
 
-exports.getGuildChannels = async (req, res) => {
+exports.getSaveGuildChannels = async (req, res) => {
     const guildId = req.params.guildId;
 
     try {
-        const channels = await getGuildChannels(req.user.id, guildId);
+        const channels = await ServerChannelConfig.findAll({
+            include: [{
+                model: Server,
+                attributes: [], // on n'a pas besoin des colonnes Server dans la réponse
+                where: {
+                    discordId: guildId  // le vrai ID Discord du serveur
+                }
+            }]
+        });
         res.json(channels);
     } catch (err) {
         console.error('[getGuildChannels] Error:', err.message);
@@ -72,3 +82,22 @@ exports.getGuildChannels = async (req, res) => {
         res.status(status).json({ error: err.message });
     }
 };
+
+exports.getGuildChannels = async (req, res) => {
+    const guildId = req.params.guildId;
+
+    try {
+
+        const response = await axios.get(`https://discord.com/api/guilds/${guildId}/channels`, {
+            headers: {
+                Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`
+            }
+        });
+
+        // Correction ici : retourner les channels récupérés
+        res.json(response.data); 
+    } catch (err) {
+        console.error('Erreur lors de la récupération du serveur:', err.message);
+        res.status(400).json({ error: 'Impossible de récupérer les infos du serveur.' });
+    }
+}
