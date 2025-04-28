@@ -8,6 +8,7 @@ const cors = require('cors');
 const initModels = require("./models/initModels");
 
 const app = express();
+const scheduler = require('./services/scheduler');
 
 app.use(cors({
     origin: process.env.FRONT_URL || 'http://localhost:5173',

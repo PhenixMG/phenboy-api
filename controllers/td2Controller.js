@@ -1,9 +1,12 @@
 // controllers/raidController.js
 const { Raid } = require('../models/Raid');
 const { RaidParticipant } = require('../models/RaidParticipant');
+const { Activity } = require('../models/Activity');
+const { ActivityParticipant } = require('../models/ActivityParticipant');
+const { Incursion } = require('../models/Incursion');
+const { IncursionParticipant } = require('../models/IncursionParticipant');
 // Si tu as un service pour envoyer les pings
 // const notificationService = require('../services/notificationService');
-const { Op } = require('sequelize');
 
 // ----- CRUD pour les Raids -----
 
@@ -107,6 +110,20 @@ exports.deleteRaid = async (req, res) => {
 // ----- Gestion des Participants -----
 
 /**
+ * Get all participants for a given Raid
+ */
+exports.getParticipants = async (req, res) => {
+    try {
+        const { raidId } = req.params;
+        // Récupération directe des participants liés
+        const participants = await RaidParticipant.findAll({ where: { raidId } });
+        return res.json(participants);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+/**
  * Add a participant to a Raid
  */
 exports.addParticipant = async (req, res) => {
@@ -176,4 +193,335 @@ exports.removeParticipant = async (req, res) => {
     }
 };
 
-// Note: La notification 15min avant est gérée par le hook Sequelize dans le modèle Raid.
+// ----- CRUD pour les Activités -----
+
+/**
+ * Create a new Activity
+ */
+exports.createActivity = async (req, res) => {
+    try {
+        const {
+            customId,
+            creatorId,
+            launchDate,
+            zone,
+            type,
+            threadId,
+            messageId,
+            serverId
+        } = req.body;
+
+        const activity = await Activity.create({
+            customId,
+            creatorId,
+            launchDate,
+            zone,
+            type,
+            threadId,
+            messageId,
+            serverId
+        });
+
+        return res.status(201).json(activity);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+/**
+ * Get all Activities (optionnel: filtrer par serverId via req.query)
+ */
+exports.getAllActivities = async (req, res) => {
+    try {
+        const { serverId } = req.query;
+        const where = serverId ? { serverId } : {};
+
+        const activities = await Activity.findAll({ where, include: ['participants', 'server'] });
+        return res.json(activities);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Get a single Activity by ID
+ */
+exports.getActivityById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const activity = await Activity.findByPk(id, { include: ['participants', 'server'] });
+        if (!activity) return res.status(404).json({ error: 'Activity not found' });
+        return res.json(activity);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Update an Activity
+ */
+exports.updateActivity = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const activity = await Activity.findByPk(id);
+        if (!activity) return res.status(404).json({ error: 'Activity not found' });
+
+        Object.assign(activity, updates);
+        await activity.save();
+
+        return res.json(activity);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+/**
+ * Delete an Activity
+ */
+exports.deleteActivity = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await Activity.destroy({ where: { id } });
+        if (!deleted) return res.status(404).json({ error: 'Activity not found' });
+        return res.status(204).send();
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+// ----- Gestion des Participants d'Activité -----
+
+/**
+ * Get all participants for a given Activity
+ */
+exports.getActivityParticipants = async (req, res) => {
+    try {
+        const { activityId } = req.params;
+        const participants = await ActivityParticipant.findAll({ where: { activityId } });
+        return res.json(participants);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Add a participant to an Activity
+ */
+exports.addActivityParticipant = async (req, res) => {
+    try {
+        const { activityId } = req.params;
+        const { userId } = req.body;
+
+        const participant = await ActivityParticipant.create({ activityId, userId });
+        return res.status(201).json(participant);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+/**
+ * Remove a participant from an Activity
+ */
+exports.removeActivityParticipant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await ActivityParticipant.destroy({ where: { id } });
+        if (!deleted) return res.status(404).json({ error: 'Participant not found' });
+        return res.status(204).send();
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+// ----- CRUD pour les Incursions -----
+
+/**
+ * Crée une nouvelle incursion
+ */
+exports.createIncursion = async (req, res) => {
+    try {
+        const {
+            customId,
+            creatorId,
+            launchDate,
+            zone,
+            threadId,
+            messageId,
+            serverId
+        } = req.body;
+
+        const incursion = await Incursion.create({
+            customId,
+            creatorId,
+            launchDate,
+            zone,
+            threadId,
+            messageId,
+            serverId
+        });
+
+        return res.status(201).json(incursion);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+/**
+ * Récupère toutes les incursions (optionnel: filtrer par serverId)
+ */
+exports.getAllIncursions = async (req, res) => {
+    try {
+        const { serverId } = req.query;
+        const where = serverId ? { serverId } : {};
+
+        const incursions = await Incursion.findAll({
+            where,
+            include: ['participants', 'server']
+        });
+        return res.json(incursions);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Récupère une seule incursion par son ID
+ */
+exports.getIncursionById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const incursion = await Incursion.findByPk(id, {
+            include: ['participants', 'server']
+        });
+        if (!incursion) return res.status(404).json({ error: 'Incursion non trouvée' });
+        return res.json(incursion);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Met à jour une incursion existante
+ */
+exports.updateIncursion = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const incursion = await Incursion.findByPk(id);
+        if (!incursion) return res.status(404).json({ error: 'Incursion non trouvée' });
+
+        Object.assign(incursion, updates);
+        await incursion.save();
+
+        return res.json(incursion);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+/**
+ * Supprime une incursion
+ */
+exports.deleteIncursion = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await Incursion.destroy({ where: { id } });
+        if (!deleted) return res.status(404).json({ error: 'Incursion non trouvée' });
+        return res.status(204).send();
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+// ----- Gestion des Participants d'Incursion -----
+
+/**
+ * Récupère tous les participants d'une incursion
+ */
+exports.getIncursionParticipants = async (req, res) => {
+    try {
+        const { incursionId } = req.params;
+        const participants = await IncursionParticipant.findAll({ where: { incursionId } });
+        return res.json(participants);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Ajoute un participant à une incursion
+ */
+exports.addIncursionParticipant = async (req, res) => {
+    try {
+        const { incursionId } = req.params;
+        const { userId, role, status = 'Confirmed' } = req.body;
+
+        // Si statut "Confirmed", vérifier qu'il n'y a pas déjà 4 joueurs Confirmed
+        if (status === 'Confirmed') {
+            const count = await IncursionParticipant.count({
+                where: { incursionId, status: 'Confirmed' }
+            });
+            if (count >= 4) {
+                return res.status(400).json({ error: 'Incursion déjà complète (4 Confirmed).' });
+            }
+        }
+
+        const participant = await IncursionParticipant.create({
+            incursionId,
+            userId,
+            role,
+            status
+        });
+        return res.status(201).json(participant);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+/**
+ * Met à jour le rôle ou le statut d'un participant d'incursion
+ */
+exports.updateIncursionParticipant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role, status } = req.body;
+
+        const participant = await IncursionParticipant.findByPk(id);
+        if (!participant) return res.status(404).json({ error: 'Participant non trouvé' });
+
+        // Si passage à "Confirmed", vérifier la limite des 4
+        if (status === 'Confirmed' && participant.status !== 'Confirmed') {
+            const count = await IncursionParticipant.count({
+                where: { incursionId: participant.incursionId, status: 'Confirmed' }
+            });
+            if (count >= 4) {
+                return res.status(400).json({ error: 'Incursion déjà complète (4 Confirmed).' });
+            }
+        }
+
+        if (role !== undefined) participant.role = role;
+        if (status !== undefined) participant.status = status;
+        await participant.save();
+
+        return res.json(participant);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+/**
+ * Supprime un participant d'une incursion
+ */
+exports.removeIncursionParticipant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await IncursionParticipant.destroy({ where: { id } });
+        if (!deleted) return res.status(404).json({ error: 'Participant non trouvé' });
+        return res.status(204).send();
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};

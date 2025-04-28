@@ -17,6 +17,10 @@ const UserLevel = require('./UserLevel');
 const MemberSnapshot = require('./MemberSnapshot');
 const Raid = require('./Raid');
 const RaidParticipant = require('./RaidParticipant');
+const Activity = require('./Activity');
+const ActivityParticipant = require('./ActivityParticipant');
+const Incursion = require('./Incursion');
+const IncursionParticipant = require('./IncursionParticipant');
 
 /**
  * 🔗 Initialise toutes les relations entre les modèles Sequelize.
@@ -108,6 +112,25 @@ function initModels() {
     // Chaque participant est lié à un raid.
     RaidParticipant.belongsTo(Raid, { foreignKey: 'raidId', as: 'raid' });
 
+    // Un serveur peut héberger plusieurs activités
+    Server.hasMany(Activity, { foreignKey: 'serverId', as: 'activities', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+    // Une activité appartiens a un serveur.
+    Activity.belongsTo(Server, { foreignKey: 'serverId', as: 'server', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+
+    // Une activité peut avoir plusieurs participants.
+    Activity.hasMany(ActivityParticipant, { foreignKey: 'activityId', as: 'participants', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+    // Un participant peut participer a une activité.
+    ActivityParticipant.belongsTo(Activity, { foreignKey: 'activityId', as: 'activity', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+
+    // Un serveur peut avoir plusieurs incursions.
+    Server.hasMany(Incursion,{ foreignKey: 'serverId', as: 'incursions' });
+    // Une incursion appartient a un serveur.
+    Incursion.belongsTo(Server,{ foreignKey: 'serverId', as: 'server' });
+
+    // Une incursion peut avoir plusieurs participants.
+    Incursion.hasMany(IncursionParticipant,{ foreignKey: 'incursionId', as: 'participants' });
+    // Un participant peut participer a une incursion.
+    IncursionParticipant.belongsTo(Incursion,{ foreignKey: 'incursionId', as: 'incursion' });
 }
 
 module.exports = initModels;
