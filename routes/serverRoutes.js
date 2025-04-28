@@ -13,7 +13,7 @@ router.get('/guilds/:guildId', isAuthenticated, rateLimiter, getSpecificGuild)
 router.get('/', isAuthenticated, getUserConfiguredServers);
 router.post('/:serverId/config', isAuthenticated, saveGuildConfiguration);
 router.get('/:serverId/dashboard', isAuthenticated, getDashboardData);
-router.get('/:guildId/channels', isAuthenticated, rateLimiter, getSaveGuildChannels)
+router.get('/:serverId/channels', isAuthenticated, rateLimiter, getSaveGuildChannels)
 router.get('/:guildId/discord/channels', isAuthenticated, rateLimiter, getGuildChannels)
 
 module.exports = router;

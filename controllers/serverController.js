@@ -63,17 +63,13 @@ exports.getSpecificGuild = async (req, res) => {
 }
 
 exports.getSaveGuildChannels = async (req, res) => {
-    const guildId = req.params.guildId;
+    const serverId = req.params.serverId;
 
     try {
         const channels = await ServerChannelConfig.findAll({
-            include: [{
-                model: Server,
-                attributes: [], // on n'a pas besoin des colonnes Server dans la réponse
-                where: {
-                    discordId: guildId  // le vrai ID Discord du serveur
-                }
-            }]
+            where: {
+                serverId: serverId
+            }
         });
         res.json(channels);
     } catch (err) {

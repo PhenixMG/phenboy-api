@@ -1,4 +1,3 @@
-// models/User.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../db/database');
 
@@ -17,6 +16,11 @@ const { sequelize } = require('../db/database');
  * @timestamps createdAt, updatedAt
  */
 const User = sequelize.define('User', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+    },
     discordId: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -44,6 +48,11 @@ const User = sequelize.define('User', {
         type: DataTypes.DATE,
         allowNull: true
     }
+}, {
+    indexes: [
+        { unique: true, fields: ['username'] },
+        { unique: true, fields: ['discordId'] }
+    ]
 });
 
 module.exports = User;

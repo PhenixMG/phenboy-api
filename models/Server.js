@@ -36,7 +36,13 @@ const Server = sequelize.define('Server', {
     },
     createdBy: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        references: {
+            model: 'Users',   // ou User.tableName
+            key: 'id'
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
     },
     td2Enabled: {
         type: DataTypes.BOOLEAN,
@@ -44,7 +50,10 @@ const Server = sequelize.define('Server', {
         defaultValue: false
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    indexes: [
+        { fields: ['createdBy'] }
+    ]
 });
 
 module.exports = Server;
