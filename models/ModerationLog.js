@@ -36,6 +36,10 @@ const ModerationLog = sequelize.define('ModerationLog', {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW
+    },
+    duration: {
+        type: DataTypes.INTEGER, // en secondes par exemple
+        allowNull: true,          // null = permanent
     }
 }, {
     timestamps: true
