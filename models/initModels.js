@@ -9,8 +9,8 @@ const Server = require('./Server');
 const ModerationLog = require('./ModerationLog');
 const UserLevel = require('./UserLevel');
 const MemberSnapshot = require('./MemberSnapshot');
-const Td2Blacklist = require('./Td2Blacklist');
-const Td2Activity = require('./Td2Activity');
+const Raid = require('./Raid');
+const RaidParticipant = require('./RaidParticipant');
 
 /**
  * 🔗 Initialise toutes les relations entre les modèles Sequelize.
@@ -66,11 +66,13 @@ function initModels() {
 
     /** Module The Division 2 **/
 
-    Server.hasMany(Td2Blacklist, { foreignKey: 'serverId', onDelete: 'CASCADE' });
-    Td2Blacklist.belongsTo(Server, { foreignKey: 'serverId' });
+    // Serveur ↔ Raids
+    Server.hasMany(Raid,   { foreignKey: 'serverId', as: 'raids' });
+    Raid.belongsTo(Server, { foreignKey: 'serverId', as: 'server' });
 
-    Server.hasMany(Td2Activity, { foreignKey: 'serverDiscordId', sourceKey: 'discordId', onDelete: 'CASCADE' });
-    Td2Activity.belongsTo(Server, { foreignKey: 'serverDiscordId', targetKey: 'discordId' });
+    // Raid ↔ Participants
+    Raid.hasMany(RaidParticipant,     { foreignKey: 'raidId', as: 'participants' });
+    RaidParticipant.belongsTo(Raid,   { foreignKey: 'raidId', as: 'raid' });
 
 }
 

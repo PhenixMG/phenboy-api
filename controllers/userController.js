@@ -4,8 +4,7 @@ const { Op } = require('sequelize');
 const MemberSnapshot = require('../models/MemberSnapshot');
 const ModerationLog = require('../models/ModerationLog');
 const ServerChannelConfig = require('../models/ServerChannelConfig');
-const Td2Activity = require('../models/Td2Activity');
-const Td2Blacklist = require('../models/Td2Blacklist');
+
 /**
  * Récupère le profil de l'utilisateur connecté (via JWT)
  */
@@ -143,22 +142,11 @@ exports.getDashboardData = async (req, res) => {
         // 🎮 TD2 - Si activé
         let td2Data = null;
         if (server.td2Enabled) {
-            const activities = await Td2Activity.findAll({
-                where: { serverId },
-                order: [['createdAt', 'DESC']],
-                limit: 20
-            });
 
-            const blacklist = await Td2Blacklist.findAll({
-                where: { serverId },
-                order: [['createdAt', 'DESC']],
-                limit: 20
-            });
-
-            td2Data = {
-                activities,
-                blacklist
-            };
+            // td2Data = {
+            //     activities,
+            //     blacklist
+            // };
         }
 
         res.json({
