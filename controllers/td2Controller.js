@@ -244,7 +244,8 @@ exports.createActivity = async (req, res) => {
             type,
             launchDate,
             threadId    = null,
-            messageId   = null
+            messageId   = null,
+            maxPlayers
         } = req.body;
 
         // 1) Résolution du serverId interne via le discordId (guildId)
@@ -264,6 +265,7 @@ exports.createActivity = async (req, res) => {
             launchDate,
             threadId,
             messageId,
+            maxPlayers,
             serverId: server.id
             // isNotified prendra sa valeur par défaut (false)
         });
@@ -311,6 +313,25 @@ exports.getActivityById = async (req, res) => {
     try {
         const { id } = req.params;
         const activity = await Activity.findByPk(id, { include: ['participants', 'server'] });
+        if (!activity) return res.status(404).json({ error: 'Activity not found' });
+        return res.json(activity);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+/**
+ * Get a single Activity by messageId
+ */
+exports.getActivityByMessageId = async (req, res) => {
+    try {
+        const messageId = req.params.id;
+        const activity = await Activity.findOne({
+            include: ['participants', 'server'],
+            where: {
+                messageId: messageId
+            }
+        });
         if (!activity) return res.status(404).json({ error: 'Activity not found' });
         return res.json(activity);
     } catch (error) {

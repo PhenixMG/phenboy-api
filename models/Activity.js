@@ -52,15 +52,12 @@ const Activity = sequelize.define('Activity', {
      */
     type: {
         type: DataTypes.ENUM(
-            'Exécution publique',
-            'Ravitaillement',
-            'Diffusion de propagande',
-            'Opération de sauvetage',
-            'Contrôle de territoire',
-            'Patrouille Elite',
-            'Convoi de ressources',
-            'Entrainement au tir',
-            'Primes'
+            'Open-World',
+            'Primes',
+            'Kenly College',
+            'Descente',
+            'Compte a Rebours',
+            'Mission Légendaire'
         ),
         allowNull: false,
         comment: 'Type d\'activité'
@@ -98,6 +95,11 @@ const Activity = sequelize.define('Activity', {
         allowNull: false,
         defaultValue: false,
         comment: "Flag indiquant si les participants ont été notifiés"
+    },
+    maxPlayers: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        comment: "Nombre maximal de participants"
     },
 
     /**

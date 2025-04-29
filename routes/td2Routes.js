@@ -43,7 +43,7 @@ const {
     getIncursionParticipants,
     addIncursionParticipant,
     updateIncursionParticipant,
-    removeIncursionParticipant
+    removeIncursionParticipant, getActivityByMessageId
 } = require('../controllers/td2Controller');
 
 // ------------------------------------------------------------------
@@ -147,6 +147,14 @@ router.get(
     '/activities/:id',
     isAuthenticated,
     getActivityById
+);
+
+// GET /td2/activities/message/:id
+// Récupère une activité par son messageId
+router.get(
+    '/activities/message/:id',
+    isAuthenticated,
+    getActivityByMessageId
 );
 
 // POST /td2/activities
