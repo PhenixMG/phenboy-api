@@ -1,23 +1,11 @@
+// models/Server.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../db/database');
 const User = require('./User');
 
-/**
- * 🛡️ Serveur Discord enregistré sur la plateforme.
- * Chaque serveur appartient à un utilisateur créateur.
- *
- * @model Server
- * @property {string} name - Nom du serveur
- * @property {string} discordId - ID Discord du serveur (unique)
- * @property {string} [icon] - URL de l’icône du serveur
- * @property {number} createdBy - ID interne de l’utilisateur créateur
- * @property {boolean} td2Enabled - Le module "The Division 2" est-il activé ?
- * @association belongsTo User
- * @timestamps createdAt, updatedAt
- */
 const Server = sequelize.define('Server', {
     id: {
-        type: DataTypes.INTEGER, // ✅ auto_increment ID SQL
+        type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
     },
@@ -32,13 +20,15 @@ const Server = sequelize.define('Server', {
     },
     icon: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        validate: { isUrl: true }
     },
+    // ← ici on passe en UUID pour matcher User.id
     createdBy: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
-            model: 'Users',   // ou User.tableName
+            model: User,       // ou 'Users'
             key: 'id'
         },
         onDelete: 'CASCADE',
@@ -50,6 +40,7 @@ const Server = sequelize.define('Server', {
         defaultValue: false
     }
 }, {
+    tableName: 'Servers',
     timestamps: true,
     indexes: [
         { fields: ['createdBy'] }

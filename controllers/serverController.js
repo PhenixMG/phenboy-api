@@ -63,12 +63,19 @@ exports.getSpecificGuild = async (req, res) => {
 }
 
 exports.getSaveGuildChannels = async (req, res) => {
-    const serverId = req.params.serverId;
+    const guildId = req.params.guildId;
+
+    const server = await Server.findOne({ where: { discordId: guildId } });
+    if (!server) {
+        return res
+            .status(404)
+            .json({ error: `Serveur introuvable pour guildId : ${guildId}` });
+    }
 
     try {
         const channels = await ServerChannelConfig.findAll({
             where: {
-                serverId: serverId
+                serverId: server.id
             }
         });
         res.json(channels);

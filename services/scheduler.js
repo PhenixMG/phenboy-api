@@ -1,14 +1,14 @@
 // services/scheduler.js
 const cron = require('node-cron');
 const { Op } = require('sequelize');
-const {
+const
     Incursion
-} = require('../models/Incursion');
-const { IncursionParticipant } = require('../models/IncursionParticipant');
-const {
+ = require('../models/Incursion');
+const  IncursionParticipant  = require('../models/IncursionParticipant');
+const
     Activity
-} = require('../models/Activity');
-const { ActivityParticipant } = require('../models/ActivityParticipant');
+ = require('../models/Activity');
+const  ActivityParticipant = require('../models/ActivityParticipant');
 const { sendWebhookToBot } = require('./webhookService');
 
 // Générique : on boucle sur un modèle et son participant

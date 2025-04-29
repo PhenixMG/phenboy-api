@@ -25,7 +25,7 @@ const ActivityParticipant = sequelize.define('ActivityParticipant', {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-            model: Activity,  // Table SQL 'activities'
+            model: 'activities',  // Table SQL 'activities'
             key: 'id'
         },
         onDelete: 'CASCADE',  // Supprime le participant si l'activité est supprimée

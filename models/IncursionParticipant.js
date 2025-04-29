@@ -23,7 +23,10 @@ const IncursionParticipant = db.define('IncursionParticipant', {
     incursionId: {
         type: D.UUID,
         allowNull: false,
-        references: { model: 'incursions', key: 'id' },
+        references: {
+            model: 'incursions',
+            key: 'id'
+        },
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
         comment: 'FK vers Incursion'

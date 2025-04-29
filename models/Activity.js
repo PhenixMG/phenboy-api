@@ -10,6 +10,16 @@ const Server = require('./Server'); // Pour la clé étrangère vers Server
 
 const Activity = sequelize.define('Activity', {
     /**
+     * Clé primaire UUID auto-générée pour chaque activité
+     */
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+        comment: 'Identifiant unique de l\'activité'
+    },
+
+    /**
      * Identifiant personnalisé utilisé pour les boutons d'interaction Discord
      */
     customId: {
@@ -38,21 +48,28 @@ const Activity = sequelize.define('Activity', {
     },
 
     /**
-     * Zone ou lieu de l'activité (ex: donjon, mission, salle de raid)
-     */
-    zone: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        comment: "Zone où se déroule l'activité"
-    },
-
-    /**
      * Type d'activité (ex: "donjon", "quête", "épreuve")
      */
     type: {
+        type: DataTypes.ENUM(
+            'Exécution publique',
+            'Ravitaillement',
+            'Diffusion de propagande',
+            'Opération de sauvetage',
+            'Contrôle de territoire',
+            'Patrouille Elite',
+            'Convoi de ressources',
+            'Entrainement au tir',
+            'Primes'
+        ),
+        allowNull: false,
+        comment: 'Type d\'activité'
+    },
+
+    name: {
         type: DataTypes.STRING,
         allowNull: false,
-        comment: "Catégorie ou type d'activité"
+        comment: "Nom de l'activité"
     },
 
     /**

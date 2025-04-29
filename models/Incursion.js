@@ -10,6 +10,15 @@ const Server = require('./Server');
 // Définition du modèle Incursion
 const Incursion = sequelize.define('Incursion', {
     /**
+     * Clé primaire UUID auto-générée pour chaque incursion
+     */
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+        comment: 'Identifiant unique de l\'incursion'
+    },
+    /**
      * Identifiant unique de l'annonce (Discord button customId)
      */
     customId: {

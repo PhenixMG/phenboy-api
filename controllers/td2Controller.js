@@ -1,10 +1,11 @@
 // controllers/raidController.js
-const { Raid } = require('../models/Raid');
-const { RaidParticipant } = require('../models/RaidParticipant');
-const { Activity } = require('../models/Activity');
-const { ActivityParticipant } = require('../models/ActivityParticipant');
-const { Incursion } = require('../models/Incursion');
-const { IncursionParticipant } = require('../models/IncursionParticipant');
+const  Raid = require('../models/Raid');
+const RaidParticipant = require('../models/RaidParticipant');
+const Activity = require('../models/Activity');
+const ActivityParticipant = require('../models/ActivityParticipant');
+const Incursion = require('../models/Incursion');
+const IncursionParticipant = require('../models/IncursionParticipant');
+const Server = require('../models/Server');
 // Si tu as un service pour envoyer les pings
 // const notificationService = require('../services/notificationService');
 
@@ -12,6 +13,10 @@ const { IncursionParticipant } = require('../models/IncursionParticipant');
 
 /**
  * Create a new Raid
+ * Expects in req.body:
+ *   - announcementCreatorId, name, launchDate, raidCreatorId, zone,
+ *   - threadId, messageId,
+ *   - guildId (== discordId du serveur)
  */
 exports.createRaid = async (req, res) => {
     try {
@@ -23,9 +28,19 @@ exports.createRaid = async (req, res) => {
             zone,
             threadId,
             messageId,
-            serverId
+            guildId       // on récupère ici l'ID Discord du serveur
         } = req.body;
 
+        console.log(guildId)
+        // (1) On cherche le serveur en base via son discordId
+        const server = await Server.findOne({
+            where: { discordId: guildId }
+        });
+        if (!server) {
+            return res.status(404).json({ error: `Serveur introuvable pour guildId : ${guildId}` });
+        }
+
+        // (2) On crée le raid avec serverId issu du serveur trouvé
         const raid = await Raid.create({
             announcementCreatorId,
             name,
@@ -34,7 +49,7 @@ exports.createRaid = async (req, res) => {
             zone,
             threadId,
             messageId,
-            serverId
+            serverId: server.id   // utilisation de l'ID interne
         });
 
         // Le hook Sequelize afterCreate appelle scheduleReminder
@@ -50,7 +65,28 @@ exports.createRaid = async (req, res) => {
  */
 exports.getAllRaids = async (req, res) => {
     try {
-        const raids = await Raid.findAll({ include: ['participants', 'server'] });
+        const { serverId, discordId } = req.query;
+
+        // Construction du filtre pour Raid
+        const where = {};
+        if (serverId)   where.serverId = serverId;
+
+        // Construction de l'include pour filtrer par discordId si besoin
+        const include = [
+            'participants'
+        ];
+        if (discordId) {
+            include.push({
+                model: Server,
+                as: 'server',
+                attributes: [],        // on n'en a pas besoin dans la réponse
+                where: { discordId }
+            });
+        } else {
+            include.push('server');
+        }
+
+        const raids = await Raid.findAll({ where, include });
         return res.json(raids);
     } catch (error) {
         return res.status(500).json({ error: error.message });
@@ -201,25 +237,35 @@ exports.removeParticipant = async (req, res) => {
 exports.createActivity = async (req, res) => {
     try {
         const {
-            customId,
+            guildId,
             creatorId,
-            launchDate,
-            zone,
+            customId,
+            name,
             type,
-            threadId,
-            messageId,
-            serverId
+            launchDate,
+            threadId    = null,
+            messageId   = null
         } = req.body;
 
+        // 1) Résolution du serverId interne via le discordId (guildId)
+        const server = await Server.findOne({ where: { discordId: guildId } });
+        if (!server) {
+            return res
+                .status(404)
+                .json({ error: `Serveur introuvable pour guildId : ${guildId}` });
+        }
+
+        // 2) Création de l’activité
         const activity = await Activity.create({
             customId,
             creatorId,
-            launchDate,
-            zone,
+            name,
             type,
+            launchDate,
             threadId,
             messageId,
-            serverId
+            serverId: server.id
+            // isNotified prendra sa valeur par défaut (false)
         });
 
         return res.status(201).json(activity);
@@ -233,10 +279,25 @@ exports.createActivity = async (req, res) => {
  */
 exports.getAllActivities = async (req, res) => {
     try {
-        const { serverId } = req.query;
-        const where = serverId ? { serverId } : {};
+        const { serverId, discordId } = req.query;
+        const where = {};
+        if (serverId)   where.serverId = serverId;
 
-        const activities = await Activity.findAll({ where, include: ['participants', 'server'] });
+        const include = [
+            'participants'
+        ];
+        if (discordId) {
+            include.push({
+                model: Server,
+                as: 'server',
+                attributes: [],
+                where: { discordId }
+            });
+        } else {
+            include.push('server');
+        }
+
+        const activities = await Activity.findAll({ where, include });
         return res.json(activities);
     } catch (error) {
         return res.status(500).json({ error: error.message });

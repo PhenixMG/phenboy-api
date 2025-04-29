@@ -10,8 +10,8 @@ const express = require('express');
 const router = express.Router();
 
 // Middlewares d'authentification et d'autorisation
-const { isAuthenticated } = require('../middlewares/isAuthenticated');
-const { isAdmin }         = require('../middlewares/isAdmin');
+const isAuthenticated = require('../middlewares/isAuthenticated');
+const isAdmin          = require('../middlewares/isAdmin');
 
 // Controllers TD2
 const {
@@ -53,7 +53,7 @@ const {
 // GET /td2/raids
 // Récupère la liste de tous les raids (filtrage optionnel par serverId dans req.query)
 router.get(
-    '/td2/raids',
+    '/raids',
     isAuthenticated,
     getAllRaids
 );
@@ -61,7 +61,7 @@ router.get(
 // GET /td2/raids/:id
 // Récupère un raid spécifique par son ID
 router.get(
-    '/td2/raids/:id',
+    '/raids/:id',
     isAuthenticated,
     getRaidById
 );
@@ -69,7 +69,7 @@ router.get(
 // POST /td2/raids
 // Crée un nouveau raid (seulement pour les admins)
 router.post(
-    '/td2/raids',
+    '/raids',
     isAuthenticated,
     isAdmin,
     createRaid
@@ -78,7 +78,7 @@ router.post(
 // PATCH /td2/raids/:id
 // Met à jour un raid existant par son ID (admin uniquement)
 router.patch(
-    '/td2/raids/:id',
+    '/raids/:id',
     isAuthenticated,
     isAdmin,
     updateRaid
@@ -87,7 +87,7 @@ router.patch(
 // DELETE /td2/raids/:id
 // Supprime un raid par son ID (admin uniquement)
 router.delete(
-    '/td2/raids/:id',
+    '/raids/:id',
     isAuthenticated,
     isAdmin,
     deleteRaid
@@ -100,7 +100,7 @@ router.delete(
 // GET /td2/raids/:raidId/participants
 // Récupère tous les participants d’un raid spécifié par raidId
 router.get(
-    '/td2/raids/:raidId/participants',
+    '/raids/:raidId/participants',
     isAuthenticated,
     getParticipants
 );
@@ -108,7 +108,7 @@ router.get(
 // POST /td2/raids/:raidId/participants
 // Ajoute un participant à un raid (statut et role dans req.body)
 router.post(
-    '/td2/raids/:raidId/participants',
+    '/raids/:raidId/participants',
     isAuthenticated,
     addParticipant
 );
@@ -116,7 +116,7 @@ router.post(
 // PATCH /td2/participants/:id
 // Met à jour le rôle ou le statut d’un participant existant (par participant ID)
 router.patch(
-    '/td2/participants/:id',
+    '/participants/:id',
     isAuthenticated,
     updateParticipant
 );
@@ -124,7 +124,7 @@ router.patch(
 // DELETE /td2/participants/:id
 // Retire un participant d’un raid (par participant ID)
 router.delete(
-    '/td2/participants/:id',
+    '/participants/:id',
     isAuthenticated,
     removeParticipant
 );
@@ -136,7 +136,7 @@ router.delete(
 // GET /td2/activities
 // Récupère la liste de toutes les activités (filtrage optionnel par serverId)
 router.get(
-    '/td2/activities',
+    '/activities',
     isAuthenticated,
     getAllActivities
 );
@@ -144,7 +144,7 @@ router.get(
 // GET /td2/activities/:id
 // Récupère une activité par son ID
 router.get(
-    '/td2/activities/:id',
+    '/activities/:id',
     isAuthenticated,
     getActivityById
 );
@@ -152,7 +152,7 @@ router.get(
 // POST /td2/activities
 // Crée une nouvelle activité (admin uniquement)
 router.post(
-    '/td2/activities',
+    '/activities',
     isAuthenticated,
     isAdmin,
     createActivity
@@ -161,7 +161,7 @@ router.post(
 // PATCH /td2/activities/:id
 // Met à jour une activité existante (admin uniquement)
 router.patch(
-    '/td2/activities/:id',
+    '/activities/:id',
     isAuthenticated,
     isAdmin,
     updateActivity
@@ -170,7 +170,7 @@ router.patch(
 // DELETE /td2/activities/:id
 // Supprime une activité (admin uniquement)
 router.delete(
-    '/td2/activities/:id',
+    '/activities/:id',
     isAuthenticated,
     isAdmin,
     deleteActivity
@@ -183,7 +183,7 @@ router.delete(
 // GET /td2/activities/:activityId/participants
 // Récupère tous les participants d’une activité spécifiée
 router.get(
-    '/td2/activities/:activityId/participants',
+    '/activities/:activityId/participants',
     isAuthenticated,
     getActivityParticipants
 );
@@ -191,7 +191,7 @@ router.get(
 // POST /td2/activities/:activityId/participants
 // Ajoute un participant à une activité
 router.post(
-    '/td2/activities/:activityId/participants',
+    '/activities/:activityId/participants',
     isAuthenticated,
     addActivityParticipant
 );
@@ -199,7 +199,7 @@ router.post(
 // DELETE /td2/activities/participants/:id
 // Retire un participant d’une activité (par participant ID)
 router.delete(
-    '/td2/activities/participants/:id',
+    '/activities/participants/:id',
     isAuthenticated,
     removeActivityParticipant
 );
@@ -211,7 +211,7 @@ router.delete(
 // GET /td2/incursions
 // Récupère la liste de toutes les incursions (filtrage optionnel par serverId)
 router.get(
-    '/td2/incursions',
+    '/incursions',
     isAuthenticated,
     getAllIncursions
 );
@@ -219,7 +219,7 @@ router.get(
 // GET /td2/incursions/:id
 // Récupère une incursion par son ID
 router.get(
-    '/td2/incursions/:id',
+    '/incursions/:id',
     isAuthenticated,
     getIncursionById
 );
@@ -227,7 +227,7 @@ router.get(
 // POST /td2/incursions
 // Crée une nouvelle incursion (admin uniquement)
 router.post(
-    '/td2/incursions',
+    '/incursions',
     isAuthenticated,
     isAdmin,
     createIncursion
@@ -236,7 +236,7 @@ router.post(
 // PATCH /td2/incursions/:id
 // Met à jour une incursion existante (admin uniquement)
 router.patch(
-    '/td2/incursions/:id',
+    '/incursions/:id',
     isAuthenticated,
     isAdmin,
     updateIncursion
@@ -245,7 +245,7 @@ router.patch(
 // DELETE /td2/incursions/:id
 // Supprime une incursion (admin uniquement)
 router.delete(
-    '/td2/incursions/:id',
+    '/incursions/:id',
     isAuthenticated,
     isAdmin,
     deleteIncursion
@@ -258,7 +258,7 @@ router.delete(
 // GET /td2/incursions/:incursionId/participants
 // Récupère tous les participants d’une incursion
 router.get(
-    '/td2/incursions/:incursionId/participants',
+    '/incursions/:incursionId/participants',
     isAuthenticated,
     getIncursionParticipants
 );
@@ -266,7 +266,7 @@ router.get(
 // POST /td2/incursions/:incursionId/participants
 // Ajoute un participant à une incursion
 router.post(
-    '/td2/incursions/:incursionId/participants',
+    '/incursions/:incursionId/participants',
     isAuthenticated,
     addIncursionParticipant
 );
@@ -274,7 +274,7 @@ router.post(
 // PATCH /td2/incursions/participants/:id
 // Met à jour un participant d’incursion (role, status)
 router.patch(
-    '/td2/incursions/participants/:id',
+    '/incursions/participants/:id',
     isAuthenticated,
     updateIncursionParticipant
 );
@@ -282,7 +282,7 @@ router.patch(
 // DELETE /td2/incursions/participants/:id
 // Retire un participant d’incursion (par participant ID)
 router.delete(
-    '/td2/incursions/participants/:id',
+    '/incursions/participants/:id',
     isAuthenticated,
     removeIncursionParticipant
 );

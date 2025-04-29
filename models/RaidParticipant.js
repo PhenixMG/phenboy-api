@@ -20,7 +20,7 @@ const RaidParticipant = sequelize.define('RaidParticipant', {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-            model: 'raid',   // Nom de la table SQL correspondant au modèle Raid
+            model: 'raids',   // Nom de la table SQL correspondant au modèle Raid
             key: 'id'
         },
         onDelete: 'CASCADE',  // Suppression en cascade si le raid est supprimé
