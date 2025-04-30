@@ -6,6 +6,7 @@ const ActivityParticipant = require('../models/ActivityParticipant');
 const Incursion = require('../models/Incursion');
 const IncursionParticipant = require('../models/IncursionParticipant');
 const Server = require('../models/Server');
+const {Op} = require("sequelize");
 // Si tu as un service pour envoyer les pings
 // const notificationService = require('../services/notificationService');
 
@@ -373,6 +374,24 @@ exports.deleteActivity = async (req, res) => {
     }
 };
 
+/**
+ * Delete an activity by his messageId
+ */
+exports.deleteActivityByMessageId = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await Activity.destroy({
+            where: {
+                messageId: id
+            }
+        })
+        if (!deleted) return res.status(404).json({ error: 'Activity not found' });
+        return res.status(204).send();
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
 // ----- Gestion des Participants d'Activité -----
 
 /**
@@ -394,11 +413,43 @@ exports.getActivityParticipants = async (req, res) => {
 exports.addActivityParticipant = async (req, res) => {
     try {
         const { activityId } = req.params;
-        const { userId } = req.body;
+        const { userId, ubisoftId } = req.body;
 
-        const participant = await ActivityParticipant.create({ activityId, userId });
+        if (!userId || !ubisoftId) {
+            return res.status(400).json({ error: 'userId et ubisoftId sont requis.' });
+        }
+
+        // Vérifie que l'activité existe
+        const activity = await Activity.findByPk(activityId);
+        if (!activity) {
+            return res.status(404).json({ error: 'Activité non trouvée.' });
+        }
+
+        // Vérifie si le userId ou ubisoftId est déjà inscrit
+        const existing = await ActivityParticipant.findOne({
+            where: {
+                activityId,
+                [Op.or]: [
+                    { userId },
+                    { ubisoftId }
+                ]
+            }
+        });
+
+        if (existing) {
+            return res.status(409).json({ error: 'Participant déjà inscrit à cette activité.' });
+        }
+
+        // Création si OK
+        const participant = await ActivityParticipant.create({
+            activityId,
+            userId,
+            ubisoftId
+        });
+
         return res.status(201).json(participant);
     } catch (error) {
+        console.error('Erreur addActivityParticipant :', error);
         return res.status(400).json({ error: error.message });
     }
 };

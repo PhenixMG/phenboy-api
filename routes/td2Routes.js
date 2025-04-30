@@ -43,7 +43,7 @@ const {
     getIncursionParticipants,
     addIncursionParticipant,
     updateIncursionParticipant,
-    removeIncursionParticipant, getActivityByMessageId
+    removeIncursionParticipant, getActivityByMessageId, deleteActivityByMessageId
 } = require('../controllers/td2Controller');
 
 // ------------------------------------------------------------------
@@ -71,7 +71,6 @@ router.get(
 router.post(
     '/raids',
     isAuthenticated,
-    isAdmin,
     createRaid
 );
 
@@ -80,7 +79,6 @@ router.post(
 router.patch(
     '/raids/:id',
     isAuthenticated,
-    isAdmin,
     updateRaid
 );
 
@@ -89,7 +87,6 @@ router.patch(
 router.delete(
     '/raids/:id',
     isAuthenticated,
-    isAdmin,
     deleteRaid
 );
 
@@ -162,7 +159,6 @@ router.get(
 router.post(
     '/activities',
     isAuthenticated,
-    isAdmin,
     createActivity
 );
 
@@ -171,7 +167,6 @@ router.post(
 router.patch(
     '/activities/:id',
     isAuthenticated,
-    isAdmin,
     updateActivity
 );
 
@@ -180,8 +175,16 @@ router.patch(
 router.delete(
     '/activities/:id',
     isAuthenticated,
-    isAdmin,
     deleteActivity
+);
+
+// DELETE /td2/activities/:id
+// Supprime une activité (admin uniquement)
+router.delete(
+    '/activities/message/:id',
+    isAuthenticated,
+    isAdmin,
+    deleteActivityByMessageId
 );
 
 // ------------------------------------------------------------------
@@ -237,7 +240,6 @@ router.get(
 router.post(
     '/incursions',
     isAuthenticated,
-    isAdmin,
     createIncursion
 );
 
@@ -246,7 +248,6 @@ router.post(
 router.patch(
     '/incursions/:id',
     isAuthenticated,
-    isAdmin,
     updateIncursion
 );
 
@@ -255,7 +256,6 @@ router.patch(
 router.delete(
     '/incursions/:id',
     isAuthenticated,
-    isAdmin,
     deleteIncursion
 );
 

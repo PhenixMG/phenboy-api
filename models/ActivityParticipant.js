@@ -40,6 +40,12 @@ const ActivityParticipant = sequelize.define('ActivityParticipant', {
         type: DataTypes.STRING,
         allowNull: false,
         comment: 'ID Discord de l\'utilisateur participant'
+    },
+
+    ubisoftId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        comment: 'ID Ubisoft du participant'
     }
 }, {
     // Options du modèle
