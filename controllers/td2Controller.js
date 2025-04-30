@@ -246,7 +246,8 @@ exports.createActivity = async (req, res) => {
             launchDate,
             threadId    = null,
             messageId   = null,
-            maxPlayers
+            maxPlayers,
+            description
         } = req.body;
 
         // 1) Résolution du serverId interne via le discordId (guildId)
@@ -267,6 +268,7 @@ exports.createActivity = async (req, res) => {
             threadId,
             messageId,
             maxPlayers,
+            description,
             serverId: server.id
             // isNotified prendra sa valeur par défaut (false)
         });

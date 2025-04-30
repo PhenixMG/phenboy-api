@@ -101,6 +101,11 @@ const Activity = sequelize.define('Activity', {
         allowNull: false,
         comment: "Nombre maximal de participants"
     },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: "Description de l'activité"
+    },
 
     /**
      * Clé étrangère vers le serveur Discord propriétaire de l'activité
