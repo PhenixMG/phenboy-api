@@ -43,7 +43,8 @@ const {
     getIncursionParticipants,
     addIncursionParticipant,
     updateIncursionParticipant,
-    removeIncursionParticipant, getActivityByMessageId, deleteActivityByMessageId
+    removeIncursionParticipant, getActivityByMessageId, deleteActivityByMessageId, getUbisoftProfile, upsertProfile,
+    scheduleReminders, getAllReminders, deleteReminder
 } = require('../controllers/td2Controller');
 
 // ------------------------------------------------------------------
@@ -294,5 +295,27 @@ router.delete(
     isAuthenticated,
     removeIncursionParticipant
 );
+
+// ------------------------------------------------------------------
+// 🔹 Profile Ubisoft
+// ------------------------------------------------------------------
+
+// GET /td2/ubisoft/:discordId
+// Récupère un profil Ubisoft
+router.get('/ubisoft/:discordId', getUbisoftProfile)
+
+// POST /td2/ubisoft/:discordId
+//Ajoute un profil Ubisoft
+router.post('/ubisoft/:discordId', upsertProfile)
+
+router.get('/reminders', isAuthenticated, getAllReminders)
+
+router.post(
+    '/reminders/create',
+    isAuthenticated,
+    scheduleReminders
+);
+
+router.delete('/reminders/:reminderId', isAuthenticated, deleteReminder)
 
 module.exports = router;

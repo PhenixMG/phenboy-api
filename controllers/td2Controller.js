@@ -6,7 +6,14 @@ const ActivityParticipant = require('../models/ActivityParticipant');
 const Incursion = require('../models/Incursion');
 const IncursionParticipant = require('../models/IncursionParticipant');
 const Server = require('../models/Server');
+const UbisoftProfile = require('../models/UbisoftProfile');
+const ScheduledReminder = require('../models/ScheduledReminder');
 const {Op} = require("sequelize");
+const eventModels = {
+    activité:  Activity,
+    raid:      Raid,
+    incursion: Incursion
+};
 // Si tu as un service pour envoyer les pings
 // const notificationService = require('../services/notificationService');
 
@@ -658,5 +665,103 @@ exports.removeIncursionParticipant = async (req, res) => {
         return res.status(204).send();
     } catch (error) {
         return res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getUbisoftProfile = async (req, res) => {
+    const { discordId } = req.params;
+    const profile = await UbisoftProfile.findByPk(discordId);
+    if(!profile) return res.status(404).json({ error: 'Profile non trouvé' });
+    res.json(profile);
+}
+
+exports.upsertProfile = async (req, res) => {
+    const { discordId } = req.params;
+    const { ubisoftId } = req.body;
+    if (!ubisoftId) return res.status(400).json({ error: 'ubisoftId requis' });
+    const [profile] = await UbisoftProfile.upsert({ discordId, ubisoftId });
+    res.json(profile);
+};
+
+exports.getAllReminders = async (req, res) => {
+    try {
+        const now = new Date();
+        const reminders = await ScheduledReminder.findAll({
+            where: {
+                remindAt: { [Op.gte]: now }
+            }
+        });
+        return res.json(reminders);
+    } catch (err) {
+        console.error('Erreur getAllReminders:', err);
+        return res.status(500).json({ error: 'Erreur interne du serveur.' });
+    }
+};
+
+exports.scheduleReminders = async (req, res) => {
+    console.log('🛎  /td2/reminders called with body:', req.body);
+    const { eventType, eventId, remindKinds } = req.body;
+
+    //  — validations inchangées —
+    if (!eventModels[eventType]) {
+        console.warn('Invalid eventType:', eventType);
+        return res.status(400).json({ error: 'Type d’événement invalide.' });
+    }
+    if (!Array.isArray(remindKinds) || remindKinds.some(k => !['15min','5min'].includes(k))) {
+        console.warn('Invalid remindKinds:', remindKinds);
+        return res.status(400).json({ error: 'remindKinds doit être ["15min","5min"].' });
+    }
+
+    // 1) On charge l’événement existant
+    const Model = eventModels[eventType];
+    const item  = await Model.findByPk(eventId);
+    if (!item) {
+        console.warn(`${eventType}#${eventId} introuvable`);
+        return res.status(404).json({ error: `${eventType} introuvable.` });
+    }
+    console.log('🔍 item.launchDate =', item.launchDate);
+
+    // 2) On prépare les objets à créer
+    const now = Date.now();
+    const toCreate = remindKinds
+        .map(kind => {
+            const delta = kind === '15min' ? 15 : 5;
+            return {
+                eventType,
+                eventId,
+                remindKind: kind,
+                remindAt:   new Date(item.launchDate.getTime() - delta * 60000)
+            };
+        })
+        .filter(r => r.remindAt.getTime() > now);
+
+    console.log('  📅 toCreate reminders:', toCreate);
+
+    // 3) Création individuelle pour récupérer les IDs
+    const created = [];
+    for (const data of toCreate) {
+        try {
+            const inst = await ScheduledReminder.create(data);
+            created.push(inst);
+            console.log('   ✅ Created reminder:', inst.toJSON());
+        } catch (err) {
+            console.error('   ❌ Erreur création reminder pour', data, err);
+        }
+    }
+
+    // 4) On renvoie bien le tableau des instances créées
+    console.log(`🛎  Returning ${created.length} reminders`);
+    return res.json({ scheduled: created });
+};
+
+exports.deleteReminder = async (req, res) => {
+    const id = req.params.reminderId;
+    try {
+        const count = await ScheduledReminder.destroy({ where: { id } });
+        if (!count) return res.status(404).json({ error: 'Reminder not found' });
+        return res.status(204).end(); // No Content
+    } catch (err) {
+        console.error('❌ Erreur deleteReminder:', err);
+        return res.status(500).json({ error: 'Internal server error' });
     }
 };

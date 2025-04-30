@@ -96,13 +96,5 @@ const Raid = sequelize.define('Raid', {
     }
 });
 
-// Méthode d’instance pour planifier un rappel 15 minutes avant la date de lancement
-Raid.prototype.scheduleReminder = function() {
-    // Calcul de l'instant de notification
-    const notifyAt = new Date(this.launchDate.getTime() - 15 * 60 * 1000);
-    // TODO : Utiliser votre librairie de scheduling (cron, Bull, Agenda, etc.)
-    // Exemple : scheduleJob(notifyAt, () => sendReminder(this.id));
-};
-
 // Export du modèle pour qu'il soit utilisé dans l'app
 module.exports = Raid;

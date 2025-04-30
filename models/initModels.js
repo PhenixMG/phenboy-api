@@ -21,6 +21,7 @@ const Activity = require('./Activity');
 const ActivityParticipant = require('./ActivityParticipant');
 const Incursion = require('./Incursion');
 const IncursionParticipant = require('./IncursionParticipant');
+const ScheduledReminder = require('./ScheduledReminder');
 
 /**
  * 🔗 Initialise toutes les relations entre les modèles Sequelize.
