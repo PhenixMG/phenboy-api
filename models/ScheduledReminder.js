@@ -23,9 +23,9 @@ const ScheduledReminder = sequelize.define('ScheduledReminder', {
         comment: 'Quand envoyer le rappel'
     },
     remindKind: {
-        type: DataTypes.ENUM('15min','5min'),
+        type: DataTypes.ENUM('15min','5min', 'delete'),
         allowNull: false,
-        comment: '–15 min ou –5 min'
+        comment: '–15 min ou –5 min ou suppression'
     }
 }, {
     tableName: 'scheduled_reminders',

@@ -702,14 +702,17 @@ exports.scheduleReminders = async (req, res) => {
     console.log('🛎  /td2/reminders called with body:', req.body);
     const { eventType, eventId, remindKinds } = req.body;
 
-    //  — validations inchangées —
+    //  — validations mises à jour pour inclure 'delete' —
     if (!eventModels[eventType]) {
         console.warn('Invalid eventType:', eventType);
         return res.status(400).json({ error: 'Type d’événement invalide.' });
     }
-    if (!Array.isArray(remindKinds) || remindKinds.some(k => !['15min','5min'].includes(k))) {
+    const allowed = ['15min','5min','delete'];
+    if (!Array.isArray(remindKinds) || remindKinds.some(k => !allowed.includes(k))) {
         console.warn('Invalid remindKinds:', remindKinds);
-        return res.status(400).json({ error: 'remindKinds doit être ["15min","5min"].' });
+        return res
+            .status(400)
+            .json({ error: `remindKinds doit être un tableau parmi [${allowed.join(', ')}].` });
     }
 
     // 1) On charge l’événement existant
@@ -721,18 +724,29 @@ exports.scheduleReminders = async (req, res) => {
     }
     console.log('🔍 item.launchDate =', item.launchDate);
 
-    // 2) On prépare les objets à créer
+    // 2) On prépare les objets à créer, en gérant 'delete' différemment
     const now = Date.now();
     const toCreate = remindKinds
         .map(kind => {
+            if (kind === 'delete') {
+                // 1h après la date de lancement
+                return {
+                    eventType,
+                    eventId,
+                    remindKind: 'delete',
+                    remindAt:   new Date(item.launchDate.getTime() + 60 * 60 * 1000)
+                };
+            }
+            // 15min / 5min avant
             const delta = kind === '15min' ? 15 : 5;
             return {
                 eventType,
                 eventId,
                 remindKind: kind,
-                remindAt:   new Date(item.launchDate.getTime() - delta * 60000)
+                remindAt:   new Date(item.launchDate.getTime() - delta * 60 * 1000)
             };
         })
+        // on ne planifie que pour le futur
         .filter(r => r.remindAt.getTime() > now);
 
     console.log('  📅 toCreate reminders:', toCreate);
