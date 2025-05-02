@@ -469,7 +469,8 @@ exports.addActivityParticipant = async (req, res) => {
 exports.removeActivityParticipant = async (req, res) => {
     try {
         const { id } = req.params;
-        const deleted = await ActivityParticipant.destroy({ where: { id } });
+        console.log(id)
+        const deleted = await ActivityParticipant.destroy({ where: { userId: id } });
         if (!deleted) return res.status(404).json({ error: 'Participant not found' });
         return res.status(204).send();
     } catch (error) {
