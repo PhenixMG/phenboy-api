@@ -21,16 +21,18 @@ const {
     getRaidById,
     updateRaid,
     deleteRaid,
-    getParticipants,
-    addParticipant,
-    updateParticipant,
-    removeParticipant,
+    removeRaidParticipant,
+    updateRaidParticipant,
+    addRaidParticipant,
+    getRaidParticipants,
     // Activities
     createActivity,
     getAllActivities,
     getActivityById,
     updateActivity,
     deleteActivity,
+    getActivityByMessageId,
+    deleteActivityByMessageId,
     getActivityParticipants,
     addActivityParticipant,
     removeActivityParticipant,
@@ -43,8 +45,14 @@ const {
     getIncursionParticipants,
     addIncursionParticipant,
     updateIncursionParticipant,
-    removeIncursionParticipant, getActivityByMessageId, deleteActivityByMessageId, getUbisoftProfile, upsertProfile,
-    scheduleReminders, getAllReminders, deleteReminder
+    removeIncursionParticipant,
+    // Ubisoft
+    getUbisoftProfile,
+    upsertProfile,
+    // Reminders
+    scheduleReminders,
+    getAllReminders,
+    deleteReminder
 } = require('../controllers/td2Controller');
 
 // ------------------------------------------------------------------
@@ -98,33 +106,33 @@ router.delete(
 // GET /td2/raids/:raidId/participants
 // Récupère tous les participants d’un raid spécifié par raidId
 router.get(
-    '/raids/:raidId/participants',
+    '/raid/:raidId/participants',
     isAuthenticated,
-    getParticipants
+    getRaidParticipants
 );
 
 // POST /td2/raids/:raidId/participants
 // Ajoute un participant à un raid (statut et role dans req.body)
 router.post(
-    '/raids/:raidId/participants',
+    '/raid/:raidId/participants',
     isAuthenticated,
-    addParticipant
+    addRaidParticipant
 );
 
-// PATCH /td2/participants/:id
+// PATCH /td2/raid/participants/:id
 // Met à jour le rôle ou le statut d’un participant existant (par participant ID)
 router.patch(
-    '/participants/:id',
+    '/raid/participants/:id',
     isAuthenticated,
-    updateParticipant
+    updateRaidParticipant
 );
 
 // DELETE /td2/participants/:id
 // Retire un participant d’un raid (par participant ID)
 router.delete(
-    '/participants/:id',
+    '/raid/participants/:id',
     isAuthenticated,
-    removeParticipant
+    removeRaidParticipant
 );
 
 // ------------------------------------------------------------------

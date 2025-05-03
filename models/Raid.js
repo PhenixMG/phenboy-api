@@ -17,12 +17,6 @@ const Raid = sequelize.define('Raid', {
         primaryKey: true,
     },
 
-    // ID Discord (ou autre) de l'utilisateur qui a créé l'annonce du raid
-    announcementCreatorId: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-
     // Nom du raid (ex : "Temple noir", "Karazhan", etc.)
     name: {
         type: DataTypes.STRING,
@@ -35,14 +29,18 @@ const Raid = sequelize.define('Raid', {
         allowNull: false,
     },
 
-    // ID Discord (ou autre) du créateur “métier” du raid
-    raidCreatorId: {
+    /**
+     * Identifiant personnalisé utilisé pour les boutons d'interaction Discord
+     */
+    customId: {
         type: DataTypes.STRING,
         allowNull: false,
+        unique: true,
+        comment: "Identifiant unique pour les boutons d'interaction"
     },
 
-    // Zone où se déroule le raid (ex : donjon, raid)
-    zone: {
+    // ID Discord (ou autre) du créateur “métier” du raid
+    raidCreatorId: {
         type: DataTypes.STRING,
         allowNull: false,
     },
@@ -81,19 +79,6 @@ const Raid = sequelize.define('Raid', {
     // Options du modèle
     tableName: 'raids',   // Nom explicite de la table en base
     timestamps: true,     // Ajoute createdAt et updatedAt
-
-    // Hooks Sequelize pour gérer le rappel de notification
-    hooks: {
-        // Après création d'un raid, planifier le rappel automatique
-        afterCreate: raid => raid.scheduleReminder(),
-
-        // Après mise à jour, si la launchDate change, replanifier le rappel
-        afterUpdate: raid => {
-            if (raid.changed('launchDate')) {
-                raid.scheduleReminder();
-            }
-        }
-    }
 });
 
 // Export du modèle pour qu'il soit utilisé dans l'app

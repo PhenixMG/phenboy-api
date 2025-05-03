@@ -29,17 +29,16 @@ const eventModels = {
 exports.createRaid = async (req, res) => {
     try {
         const {
-            announcementCreatorId,
             name,
             launchDate,
-            raidCreatorId,
-            zone,
+            customId,
+            creatorId,
             threadId,
             messageId,
-            guildId       // on récupère ici l'ID Discord du serveur
+            guildId,
         } = req.body;
 
-        console.log(guildId)
+        console.log(creatorId, customId, launchDate, name, threadId, messageId, guildId)
         // (1) On cherche le serveur en base via son discordId
         const server = await Server.findOne({
             where: { discordId: guildId }
@@ -50,11 +49,10 @@ exports.createRaid = async (req, res) => {
 
         // (2) On crée le raid avec serverId issu du serveur trouvé
         const raid = await Raid.create({
-            announcementCreatorId,
             name,
             launchDate,
-            raidCreatorId,
-            zone,
+            customId,
+            raidCreatorId: creatorId,
             threadId,
             messageId,
             serverId: server.id   // utilisation de l'ID interne
@@ -156,7 +154,7 @@ exports.deleteRaid = async (req, res) => {
 /**
  * Get all participants for a given Raid
  */
-exports.getParticipants = async (req, res) => {
+exports.getRaidParticipants = async (req, res) => {
     try {
         const { raidId } = req.params;
         // Récupération directe des participants liés
@@ -170,15 +168,15 @@ exports.getParticipants = async (req, res) => {
 /**
  * Add a participant to a Raid
  */
-exports.addParticipant = async (req, res) => {
+exports.addRaidParticipant = async (req, res) => {
     try {
         const { raidId } = req.params;
-        const { userId, role, status = 'Confirmed' } = req.body;
+        const { userId, role, status = 'Confirmé' } = req.body;
 
         // Si on confirme, vérifier qu'il n'y a pas déjà 8 joueurs Confirmed
-        if (status === 'Confirmed') {
+        if (status === 'Confirmé') {
             const count = await RaidParticipant.count({
-                where: { raidId, status: 'Confirmed' }
+                where: { raidId, status: 'Confirmé' }
             });
             if (count >= 8) {
                 return res.status(400).json({ error: 'Le raid est déjà plein (8 joueurs Confirmed).' });
@@ -195,7 +193,7 @@ exports.addParticipant = async (req, res) => {
 /**
  * Update a participant's role or status
  */
-exports.updateParticipant = async (req, res) => {
+exports.updateRaidParticipant = async (req, res) => {
     try {
         const { id } = req.params;
         const { role, status } = req.body;
@@ -204,12 +202,12 @@ exports.updateParticipant = async (req, res) => {
         if (!participant) return res.status(404).json({ error: 'Participant non trouvé' });
 
         // Vérif si status -> Confirmed
-        if (status === 'Confirmed' && participant.status !== 'Confirmed') {
+        if (status === 'Confirmé' && participant.status !== 'Confirmé') {
             const count = await RaidParticipant.count({
-                where: { raidId: participant.raidId, status: 'Confirmed' }
+                where: { raidId: participant.raidId, status: 'Confirmé' }
             });
             if (count >= 8) {
-                return res.status(400).json({ error: 'Le raid est déjà plein (8 joueurs Confirmed).' });
+                return res.status(400).json({ error: 'Le raid est déjà plein (8 joueurs Confirmé).' });
             }
         }
 
@@ -226,7 +224,7 @@ exports.updateParticipant = async (req, res) => {
 /**
  * Remove a participant from a Raid
  */
-exports.removeParticipant = async (req, res) => {
+exports.removeRaidParticipant = async (req, res) => {
     try {
         const { id } = req.params;
         const deleted = await RaidParticipant.destroy({ where: { id } });

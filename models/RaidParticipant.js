@@ -45,9 +45,9 @@ const RaidParticipant = sequelize.define('RaidParticipant', {
     // - Late : retardataire
     // - Substitute : suppléant non compté dans les 8
     status: {
-        type: DataTypes.ENUM('Confirmed', 'Unavailable', 'Late', 'Substitute'),
+        type: DataTypes.ENUM('Confirmé', 'Indisponible', 'En retard', 'Suppléant'),
         allowNull: false,
-        defaultValue: 'Confirmed', // Par défaut, un nouvel entrant est "Confirmed"
+        defaultValue: 'Confirmé', // Par défaut, un nouvel entrant est "Confirmed"
     }
 }, {
     // Nom de la table en base
