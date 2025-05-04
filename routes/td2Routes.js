@@ -52,7 +52,7 @@ const {
     // Reminders
     scheduleReminders,
     getAllReminders,
-    deleteReminder
+    deleteReminder, getRaidByMessageId
 } = require('../controllers/td2Controller');
 
 // ------------------------------------------------------------------
@@ -74,6 +74,14 @@ router.get(
     isAuthenticated,
     getRaidById
 );
+
+// GET /td2/raids/message/:messageId
+// Récupère un raid spécifique par son messageId
+router.get(
+    '/raids/message/:messageId',
+    isAuthenticated,
+    getRaidByMessageId
+)
 
 // POST /td2/raids
 // Crée un nouveau raid (seulement pour les admins)

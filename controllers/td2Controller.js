@@ -105,13 +105,31 @@ exports.getAllRaids = async (req, res) => {
 exports.getRaidById = async (req, res) => {
     try {
         const { id } = req.params;
-        const raid = await Raid.findByPk(id, { include: ['participants', 'server'] });
+        console.log(id)
+        const raid = await Raid.findByPk(id);
         if (!raid) return res.status(404).json({ error: 'Raid not found' });
         return res.json(raid);
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
 };
+
+exports.getRaidByMessageId = async (req, res) => {
+    try{
+        const {messageId} = req.params;
+
+        const raid = await Raid.findOne({
+            include: ['participants', 'server'],
+            where: {
+                messageId: messageId
+            }
+        })
+        if (!raid) return res.status(404).json({ error: 'Raid not found' });
+        return res.json(raid);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
 
 /**
  * Update a Raid
